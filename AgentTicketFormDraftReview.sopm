@@ -14,6 +14,5 @@
         <File Permission="660" Location="Custom/Kernel/System/Web/Request.pm" />
         <File Permission="660" Location="Kernel/Modules/AgentTicketFormDraftEdit.pm" />
         <File Permission="660" Location="Kernel/Output/HTML/Templates/Standard/AgentTicketFormDraftEdit.tt" />
-        <File Permission="660" Location="var/httpd/htdocs/js/Core.Agent.CustomerSearch.js" />
     </Filelist>
 </otobo_package>

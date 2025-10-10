@@ -262,12 +262,7 @@ sub Run {
         UserID  => $Self->{UserID},
     );
 
-    # hash for check duplicated entries
-    my %AddressesList;
-
-    my @MultipleCustomer;
     my $CustomersNumberTo = $ParamObject->GetParam( Param => 'CustomerTicketCounterToCustomer' ) || 0;
-    my $Selected          = $ParamObject->GetParam( Param => 'CustomerSelected' )                || '';
 
     # get check item object
     my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
@@ -283,60 +278,15 @@ sub Run {
 
             next COUNT unless $CustomerElement;
 
-            my $CustomerSelected = ( $Selected eq $Count ? 'checked ' : '' );
-            my $CustomerKey      = $ParamObject->GetParam( Param => 'CustomerKey_' . $Count )   || '';
-            my $CustomerQueue    = $ParamObject->GetParam( Param => 'CustomerQueue_' . $Count ) || '';
-
             if ( $GetParam{To} ) {
                 $GetParam{To} .= ', ' . $CustomerElement;
             }
             else {
                 $GetParam{To} = $CustomerElement;
             }
-
-            # check email address
-            my $CustomerErrorMsg = 'CustomerGenericServerErrorMsg';
-            my $CustomerError    = '';
-            for my $Email ( Mail::Address->parse($CustomerElement) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $CustomerErrorMsg = $CheckItemObject->CheckErrorType()
-                        . 'ServerErrorMsg';
-                    $CustomerError = 'ServerError';
-                }
-            }
-
-            # check for duplicated entries
-            if ( defined $AddressesList{$CustomerElement} && $CustomerError eq '' ) {
-                $CustomerErrorMsg = 'IsDuplicatedServerErrorMsg';
-                $CustomerError    = 'ServerError';
-            }
-
-            my $CustomerDisabled = '';
-            my $CountAux         = $CustomerCounter++;
-            if ( $CustomerError ne '' ) {
-                $CustomerDisabled = 'disabled';
-                $CountAux         = $Count . 'Error';
-            }
-
-            if ( $CustomerQueue ne '' ) {
-                $CustomerQueue = $Count;
-            }
-
-            push @MultipleCustomer, {
-                Count            => $CountAux,
-                CustomerElement  => $CustomerElement,
-                CustomerSelected => $CustomerSelected,
-                CustomerKey      => $CustomerKey,
-                CustomerError    => $CustomerError,
-                CustomerErrorMsg => $CustomerErrorMsg,
-                CustomerDisabled => $CustomerDisabled,
-                CustomerQueue    => $CustomerQueue,
-            };
-            $AddressesList{$CustomerElement} = 1;
         }
     }
 
-    my @MultipleCustomerCc;
     my $CustomersNumberCc = $ParamObject->GetParam( Param => 'CustomerTicketCounterCcCustomer' ) || 0;
 
     if ($CustomersNumberCc) {
@@ -350,58 +300,15 @@ sub Run {
 
             next COUNT unless $CustomerElementCc;
 
-            my $CustomerKeyCc   = $ParamObject->GetParam( Param => 'CcCustomerKey_' . $Count )   || '';
-            my $CustomerQueueCc = $ParamObject->GetParam( Param => 'CcCustomerQueue_' . $Count ) || '';
-
             if ( $GetParam{Cc} ) {
                 $GetParam{Cc} .= ', ' . $CustomerElementCc;
             }
             else {
                 $GetParam{Cc} = $CustomerElementCc;
             }
-
-            # check email address
-            my $CustomerErrorMsgCc = 'CustomerGenericServerErrorMsg';
-            my $CustomerErrorCc    = '';
-            for my $Email ( Mail::Address->parse($CustomerElementCc) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $CustomerErrorMsgCc = $CheckItemObject->CheckErrorType()
-                        . 'ServerErrorMsg';
-                    $CustomerErrorCc = 'ServerError';
-                }
-            }
-
-            # check for duplicated entries
-            if ( defined $AddressesList{$CustomerElementCc} && $CustomerErrorCc eq '' ) {
-                $CustomerErrorMsgCc = 'IsDuplicatedServerErrorMsg';
-                $CustomerErrorCc    = 'ServerError';
-            }
-
-            my $CustomerDisabledCc = '';
-            my $CountAuxCc         = $CustomerCounterCc++;
-            if ( $CustomerErrorCc ne '' ) {
-                $CustomerDisabledCc = 'disabled';
-                $CountAuxCc         = $Count . 'Error';
-            }
-
-            if ( $CustomerQueueCc ne '' ) {
-                $CustomerQueueCc = $Count;
-            }
-
-            push @MultipleCustomerCc, {
-                Count            => $CountAuxCc,
-                CustomerElement  => $CustomerElementCc,
-                CustomerKey      => $CustomerKeyCc,
-                CustomerError    => $CustomerErrorCc,
-                CustomerErrorMsg => $CustomerErrorMsgCc,
-                CustomerDisabled => $CustomerDisabledCc,
-                CustomerQueue    => $CustomerQueueCc,
-            };
-            $AddressesList{$CustomerElementCc} = 1;
         }
     }
 
-    my @MultipleCustomerBcc;
     my $CustomersNumberBcc = $ParamObject->GetParam( Param => 'CustomerTicketCounterBccCustomer' ) || 0;
 
     if ($CustomersNumberBcc) {
@@ -415,54 +322,12 @@ sub Run {
 
             next COUNT unless $CustomerElementBcc;
 
-            my $CustomerKeyBcc   = $ParamObject->GetParam( Param => 'BccCustomerKey_' . $Count )   || '';
-            my $CustomerQueueBcc = $ParamObject->GetParam( Param => 'BccCustomerQueue_' . $Count ) || '';
-
             if ( $GetParam{Bcc} ) {
                 $GetParam{Bcc} .= ', ' . $CustomerElementBcc;
             }
             else {
                 $GetParam{Bcc} = $CustomerElementBcc;
             }
-
-            # check email address
-            my $CustomerErrorMsgBcc = 'CustomerGenericServerErrorMsg';
-            my $CustomerErrorBcc    = '';
-            for my $Email ( Mail::Address->parse($CustomerElementBcc) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $CustomerErrorMsgBcc = $CheckItemObject->CheckErrorType()
-                        . 'ServerErrorMsg';
-                    $CustomerErrorBcc = 'ServerError';
-                }
-            }
-
-            # check for duplicated entries
-            if ( defined $AddressesList{$CustomerElementBcc} && $CustomerErrorBcc eq '' ) {
-                $CustomerErrorMsgBcc = 'IsDuplicatedServerErrorMsg';
-                $CustomerErrorBcc    = 'ServerError';
-            }
-
-            my $CustomerDisabledBcc = '';
-            my $CountAuxBcc         = $CustomerCounterBcc++;
-            if ( $CustomerErrorBcc ne '' ) {
-                $CustomerDisabledBcc = 'disabled';
-                $CountAuxBcc         = $Count . 'Error';
-            }
-
-            if ( $CustomerQueueBcc ne '' ) {
-                $CustomerQueueBcc = $Count;
-            }
-
-            push @MultipleCustomerBcc, {
-                Count            => $CountAuxBcc,
-                CustomerElement  => $CustomerElementBcc,
-                CustomerKey      => $CustomerKeyBcc,
-                CustomerError    => $CustomerErrorBcc,
-                CustomerErrorMsg => $CustomerErrorMsgBcc,
-                CustomerDisabled => $CustomerDisabledBcc,
-                CustomerQueue    => $CustomerQueueBcc,
-            };
-            $AddressesList{$CustomerElementBcc} = 1;
         }
     }
 
@@ -539,45 +404,6 @@ sub Run {
 
         # get check item object
         my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
-
-        # check some values
-        LINE:
-        for my $Line (qw(To Cc Bcc)) {
-            next LINE if !$GetParam{$Line};
-            for my $Email ( Mail::Address->parse( $GetParam{$Line} ) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $Error{ $Line . 'ErrorType' } = $Line . $CheckItemObject->CheckErrorType() . 'ServerErrorMsg';
-                    $Error{ $Line . 'Invalid' }   = 'ServerError';
-                }
-                my $IsLocal = $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressIsLocalAddress(
-                    Address => $Email->address()
-                );
-                if ($IsLocal) {
-                    $Error{ $Line . 'IsLocalAddress' } = 'ServerError';
-                }
-            }
-        }
-
-        if ( $Error{ToIsLocalAddress} ) {
-            $LayoutObject->Block(
-                Name => 'ToIsLocalAddressServerErrorMsg',
-                Data => \%GetParam,
-            );
-        }
-
-        if ( $Error{CcIsLocalAddress} ) {
-            $LayoutObject->Block(
-                Name => 'CcIsLocalAddressServerErrorMsg',
-                Data => \%GetParam,
-            );
-        }
-
-        if ( $Error{BccIsLocalAddress} ) {
-            $LayoutObject->Block(
-                Name => 'BccIsLocalAddressServerErrorMsg',
-                Data => \%GetParam,
-            );
-        }
 
         # get all attachments meta data
         my @Attachments = $UploadCacheObject->FormIDGetAllFilesMeta(
@@ -706,22 +532,6 @@ sub Run {
                 Type        => 'inline',
                 NoCache     => 1,
             );
-        }
-
-        # check if at least one recipient has been chosen
-        if ( !$GetParam{To} ) {
-            $Error{'ToInvalid'} = 'ServerError';
-        }
-
-        # check some values
-        LINE:
-        for my $Line (qw(To Cc Bcc)) {
-            next LINE if !$GetParam{$Line};
-            for my $Email ( Mail::Address->parse( $GetParam{$Line} ) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $Error{ $Line . 'Invalid' } = 'ServerError';
-                }
-            }
         }
 
         # check subject
@@ -932,9 +742,6 @@ sub Run {
                 ),
                 ResponseFormat      => $LayoutObject->Ascii2Html( Text => $GetParam{Body} ),
                 Errors              => \%Error,
-                MultipleCustomer    => \@MultipleCustomer,
-                MultipleCustomerCc  => \@MultipleCustomerCc,
-                MultipleCustomerBcc => \@MultipleCustomerBcc,
                 Attachments         => \@Attachments,
                 GetParam            => \%GetParam,
                 TicketBackType      => $TicketBackType,
@@ -971,16 +778,6 @@ sub Run {
         # get recipients
         my $Recipients = '';
         LINE:
-        for my $Line (qw(To Cc Bcc)) {
-
-            next LINE if !$GetParam{$Line};
-
-            if ($Recipients) {
-                $Recipients .= ', ';
-            }
-            $Recipients .= $GetParam{$Line};
-        }
-
         my $MimeType = 'text/plain';
         if ( $LayoutObject->{BrowserRichText} ) {
             $MimeType = 'text/html';
@@ -1021,11 +818,6 @@ sub Run {
             );
         }
 
-        my $IsVisibleForCustomer = $Config->{IsVisibleForCustomerDefault};
-        if ( $GetParam{IsVisibleForCustomerPresent} ) {
-            $IsVisibleForCustomer = $GetParam{IsVisibleForCustomer} ? 1 : 0;
-        }
-
         # Get attributes like sender address
         my %Data = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->Attributes(
             TicketID => $Self->{TicketID},
@@ -1035,7 +827,6 @@ sub Run {
 
         # send email
         my $ArticleID = $ArticleBackendObject->ArticleSend(
-            IsVisibleForCustomer => $IsVisibleForCustomer,
             SenderType           => 'agent',
             TicketID             => $Self->{TicketID},
             HistoryType          => 'SendAnswer',
@@ -1590,118 +1381,6 @@ sub Run {
             }
         }
 
-        # get system address object
-        my $SystemAddress = $Kernel::OM->Get('Kernel::System::SystemAddress');
-
-        # add not local To addresses to Cc
-        for my $Email ( Mail::Address->parse( $Data{To} ) ) {
-            my $IsLocal = $SystemAddress->SystemAddressIsLocalAddress(
-                Address => $Email->address(),
-            );
-            if ( !$IsLocal ) {
-                if ( $Data{Cc} ) {
-                    $Data{Cc} .= ', ';
-                }
-                $Data{Cc} .= $Email->format();
-            }
-        }
-
-        # check ReplyTo
-        if ( $Data{ReplyTo} ) {
-            $Data{To} = $Data{ReplyTo};
-        }
-        else {
-            $Data{To} = $Data{From};
-
-            # try to remove some wrong text to from line (by way of ...)
-            # added by some strange mail programs on bounce
-            $Data{To} =~ s/(.+?\<.+?\@.+?\>)\s+\(by\s+way\s+of\s+.+?\)/$1/ig;
-        }
-
-        # get to email (just "some@example.com")
-        for my $Email ( Mail::Address->parse( $Data{To} ) ) {
-            $Data{ToEmail} = $Email->address();
-        }
-
-        # only reply to sender
-        if ( !$GetParam{ReplyAll} ) {
-            $Data{Cc}  = '';
-            $Data{Bcc} = '';
-        }
-
-        # use customer database email
-        # do not add customer email to cc, if article is visible for customer
-        if (
-            $ConfigObject->Get('Ticket::Frontend::ComposeAddCustomerAddress')
-            && $Data{IsVisibleForCustomer}
-            )
-        {
-            # check if customer is in recipient list
-            if ( $Customer{UserEmail} && $Data{ToEmail} !~ /^\Q$Customer{UserEmail}\E$/i ) {
-
-                if ( $Data{SenderType} eq 'agent' && !$Data{IsVisibleForCustomer} ) {
-                    if ( $Data{To} ) {
-                        $Data{To} .= ', ' . $Customer{UserEmail};
-                    }
-                    else {
-                        $Data{To} = $Customer{UserEmail};
-                    }
-                }
-
-                # replace To with customers database address
-                elsif ( $ConfigObject->Get('Ticket::Frontend::ComposeReplaceSenderAddress') ) {
-
-                    $Output .= $LayoutObject->Notify(
-                        Data => $LayoutObject->{LanguageObject}->Translate(
-                            'Address %s replaced with registered customer address.',
-                            $Data{ToEmail},
-                        ),
-
-                    );
-                    $Data{To} = $Customer{UserEmail};
-                }
-
-                # add customers database address to Cc
-                else {
-                    $Output .= $LayoutObject->Notify(
-                        Info => Translatable("Customer user automatically added in Cc."),
-                    );
-                    if ( $Data{Cc} ) {
-                        $Data{Cc} .= ', ' . $Customer{UserEmail};
-                    }
-                    else {
-                        $Data{Cc} = $Customer{UserEmail};
-                    }
-                }
-            }
-        }
-
-        # find duplicate addresses
-        my %Recipient;
-        for my $Type (qw(To Cc Bcc)) {
-            if ( $Data{$Type} ) {
-                my $NewLine = '';
-                for my $Email ( Mail::Address->parse( $Data{$Type} ) ) {
-                    my $Address = lc $Email->address();
-
-                    # only use email addresses with @ inside
-                    if ( $Address && $Address =~ /@/ && !$Recipient{$Address} ) {
-                        $Recipient{$Address} = 1;
-                        my $IsLocal = $SystemAddress->SystemAddressIsLocalAddress(
-                            Address => $Address,
-                        );
-                        if ( !$IsLocal ) {
-                            if ($NewLine) {
-                                $NewLine .= ', ';
-                            }
-                            $NewLine .= $Email->format();
-                        }
-                    }
-                }
-                $Data{$Type} = $NewLine;
-            }
-        }
-
         # get template
         my $TemplateGenerator = $Kernel::OM->Get('Kernel::System::TemplateGenerator');
 
@@ -1780,25 +1459,6 @@ sub Run {
             Template => $ResponseFormat,
             Data     => { %Param, %DataHTML },
         );
-
-        # check some values
-        my %Error;
-        LINE:
-        for my $Line (qw(To Cc Bcc)) {
-            next LINE if !$Data{$Line};
-            for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $Error{ $Line . "Invalid" } = " ServerError";
-                }
-            }
-        }
-        if ( $Data{From} ) {
-            for my $Email ( Mail::Address->parse( $Data{From} ) ) {
-                if ( !$CheckItemObject->CheckEmail( Address => $Email->address() ) ) {
-                    $Error{"FromInvalid"} .= $CheckItemObject->CheckError();
-                }
-            }
-        }
 
         # remember dynamic field validation results if erroneous
         my %DynamicFieldPossibleValues;
@@ -1890,12 +1550,6 @@ sub Run {
                         $GetParam{$Parameter} = $NewParams;
                     }
                 }
-
-                # get errors
-                %Error = (
-                    %Error,
-                    $Object->Error( %GetParam, Config => $Jobs{$Job} ),
-                );
             }
         }
 
@@ -1906,10 +1560,6 @@ sub Run {
                 %GetParam,
             ),
             Attachments         => \@Attachments,
-            Errors              => \%Error,
-            MultipleCustomer    => \@MultipleCustomer,
-            MultipleCustomerCc  => \@MultipleCustomerCc,
-            MultipleCustomerBcc => \@MultipleCustomerBcc,
             GetParam            => \%GetParam,
             ResponseID          => $GetParam{ResponseID},
             ReplyArticleID      => $GetParam{ArticleID},
@@ -1949,220 +1599,7 @@ sub _Mask {
 
     # get config for frontend module
     my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
-
-    # prepare errors!
-    if ( $Param{Errors} ) {
-        for my $Error ( sort keys %{ $Param{Errors} } ) {
-            $Param{$Error} = $LayoutObject->Ascii2Html(
-                Text => $Param{Errors}->{$Error},
-            );
-        }
-    }
-
-    # Multiple-Autocomplete
-    $Param{To} = ( scalar @{ $Param{MultipleCustomer} } ? '' : $Param{To} );
-    if ( defined $Param{To} && $Param{To} ne '' ) {
-        $Param{ToInvalid} = '';
-    }
-
-    $Param{Cc} = ( scalar @{ $Param{MultipleCustomerCc} } ? '' : $Param{Cc} );
-    if ( defined $Param{Cc} && $Param{Cc} ne '' ) {
-        $Param{CcInvalid} = '';
-    }
-
-    # Cc
-    my $CustomerCounterCc = 0;
-    if ( $Param{MultipleCustomerCc} ) {
-        for my $Item ( @{ $Param{MultipleCustomerCc} } ) {
-            if ( $Self->{AccessMode} eq "rw" ) {
-                $Item->{DisplayIcons} = 1;
-            }
-            $LayoutObject->Block(
-                Name => 'CcMultipleCustomer',
-                Data => $Item,
-            );
-            $LayoutObject->Block(
-                Name => 'Cc' . $Item->{CustomerErrorMsg},
-                Data => $Item,
-            );
-            if ( $Item->{CustomerError} ) {
-                $LayoutObject->Block(
-                    Name => 'CcCustomerErrorExplantion',
-                );
-            }
-            $CustomerCounterCc++;
-        }
-    }
-
-    if ( !$CustomerCounterCc ) {
-        $Param{CcCustomerHiddenContainer} = 'Hidden';
-    }
-
-    # set customer counter
-    $LayoutObject->Block(
-        Name => 'CcMultipleCustomerCounter',
-        Data => {
-            CustomerCounter => $CustomerCounterCc,
-        },
-    );
-
-    # Bcc
-    my $CustomerCounterBcc = 0;
-    if ( $Param{MultipleCustomerBcc} ) {
-        for my $Item ( @{ $Param{MultipleCustomerBcc} } ) {
-            if ( $Self->{AccessMode} eq "rw" ) {
-                $Item->{DisplayIcons} = 1;
-            }
-            $LayoutObject->Block(
-                Name => 'BccMultipleCustomer',
-                Data => $Item,
-            );
-            $LayoutObject->Block(
-                Name => 'Bcc' . $Item->{CustomerErrorMsg},
-                Data => $Item,
-            );
-            if ( $Item->{CustomerError} ) {
-                $LayoutObject->Block(
-                    Name => 'BccCustomerErrorExplantion',
-                );
-            }
-            $CustomerCounterBcc++;
-        }
-    }
-
-    if ( !$CustomerCounterBcc ) {
-        $Param{BccCustomerHiddenContainer} = 'Hidden';
-    }
-
-    # set customer counter
-    $LayoutObject->Block(
-        Name => 'BccMultipleCustomerCounter',
-        Data => {
-            CustomerCounter => $CustomerCounterBcc++,
-        },
-    );
-
-    # To
-    my $CustomerCounter = 0;
-    if ( $Param{MultipleCustomer} ) {
-        for my $Item ( @{ $Param{MultipleCustomer} } ) {
-            if ( $Self->{AccessMode} eq "rw" ) {
-                $Item->{DisplayIcons} = 1;
-            }
-            $LayoutObject->Block(
-                Name => 'MultipleCustomer',
-                Data => $Item,
-            );
-            $LayoutObject->Block(
-                Name => $Item->{CustomerErrorMsg},
-                Data => $Item,
-            );
-            if ( $Item->{CustomerError} ) {
-                $LayoutObject->Block(
-                    Name => 'CustomerErrorExplantion',
-                );
-            }
-            $CustomerCounter++;
-        }
-    }
-
-    if ( !$CustomerCounter ) {
-        $Param{CustomerHiddenContainer} = 'Hidden';
-    }
-
-    # set customer counter
-    $LayoutObject->Block(
-        Name => 'MultipleCustomerCounter',
-        Data => {
-            CustomerCounter => $CustomerCounter,
-        },
-    );
-
-    if ( $Param{ToInvalid} && $Param{Errors} ) {
-        $LayoutObject->Block(
-            Name => 'ToServerErrorMsg',
-        );
-    }
-
     my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
-
-    # set preselected values for Cc field
-    if ( $Param{Cc} && $Param{Cc} ne '' && !$CustomerCounterCc ) {
-
-        # split Cc values
-        my @EmailAddressesCc;
-        for my $Email ( Mail::Address->parse( $Param{Cc} ) ) {
-
-            my %CustomerSearch = $CustomerUserObject->CustomerSearch(
-                PostMasterSearch => $Email->address(),
-                Limit            => 1,
-            );
-
-            # CustomerSearch hash could have one item from each backend, so insert just the first one.
-            if (%CustomerSearch) {
-                CUSTOMERUSERID:
-                for my $CustomerUserID ( sort keys %CustomerSearch ) {
-                    push @EmailAddressesCc, {
-                        CustomerKey        => $CustomerUserID,
-                        CustomerTicketText => $CustomerSearch{$CustomerUserID},
-                    };
-                    last CUSTOMERUSERID;
-                }
-            }
-            else {
-                push @EmailAddressesCc, {
-                    CustomerKey        => '',
-                    CustomerTicketText => $Email->[0] ? "$Email->[0] <$Email->[1]>" : "$Email->[1]",
-                };
-            }
-        }
-
-        $LayoutObject->AddJSData(
-            Key   => 'EmailAddressesCc',
-            Value => \@EmailAddressesCc,
-        );
-
-        $Param{Cc} = '';
-    }
-
-    # set preselected values for To field
-    if ( defined $Param{To} && $Param{To} ne '' && !$CustomerCounter ) {
-
-        # split To values
-        my @EmailAddressesTo;
-        for my $Email ( Mail::Address->parse( $Param{To} ) ) {
-
-            my %CustomerSearch = $CustomerUserObject->CustomerSearch(
-                PostMasterSearch => $Email->address(),
-                Limit            => 1,
-            );
-
-            # CustomerSearch hash could have one item from each backend, so insert just the first one.
-            if (%CustomerSearch) {
-                CUSTOMERUSERID:
-                for my $CustomerUserID ( sort keys %CustomerSearch ) {
-                    push @EmailAddressesTo, {
-                        CustomerKey        => $CustomerUserID,
-                        CustomerTicketText => $CustomerSearch{$CustomerUserID},
-                    };
-                    last CUSTOMERUSERID;
-                }
-            }
-            else {
-                push @EmailAddressesTo, {
-                    CustomerKey        => '',
-                    CustomerTicketText => $Email->[0] ? "$Email->[0] <$Email->[1]>" : "$Email->[1]",
-                };
-            }
-        }
-
-        $LayoutObject->AddJSData(
-            Key   => 'EmailAddressesTo',
-            Value => \@EmailAddressesTo,
-        );
-
-        $Param{To} = '';
-    }
 
     $LayoutObject->Block(
         Name => $Param{TicketBackType},

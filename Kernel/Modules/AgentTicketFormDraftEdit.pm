@@ -2297,22 +2297,23 @@ sub _Mask {
         $Param{ReadOnly}      = 'readonly';
         $Param{ReadOnlyClass} = 'Readonly';
     }
+
     $LayoutObject->Block(
         Name => 'ToCustomer',
         Data => {
-            OptionCustomerUserAddressBook => $OptionCustomerUserAddressBook
+            ToCustomer => $Param{GetParam}{To}
         }
     );
     $LayoutObject->Block(
         Name => 'CcCustomer',
         Data => {
-            OptionCustomerUserAddressBook => $OptionCustomerUserAddressBook
+            Cc => $Param{GetParam}{Cc}
         }
     );
     $LayoutObject->Block(
         Name => 'BccCustomer',
         Data => {
-            OptionCustomerUserAddressBook => $OptionCustomerUserAddressBook
+            Bcc => $Param{GetParam}{Bcc}
         }
     );
 

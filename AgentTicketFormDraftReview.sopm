@@ -9,7 +9,7 @@
     <Description Lang="en">Enables users to view ticket drafts if they have read permissions, and to edit ticket drafts if they have write permissions.</Description>
     <Filelist>    
         <File Permission="660" Location="Custom/Kernel/Modules/AgentTicketZoom.pm" />
-        <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/FormElements/AttachmentList.tt" />
+        <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/FormElements/AttachmentListDraftEdit.tt" />
         <File Permission="660" Location="Custom/Kernel/System/FormDraft.pm" />
         <File Permission="660" Location="Custom/Kernel/System/Web/Request.pm" />
         <File Permission="660" Location="Kernel/Modules/AgentTicketFormDraftEdit.pm" />

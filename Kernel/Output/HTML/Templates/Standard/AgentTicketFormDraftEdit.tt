@@ -24,7 +24,6 @@
     <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
     <input type="hidden" name="ResponseID" value="[% Data.ResponseID | html %]"/>
     <input type="hidden" name="ReplyArticleID" value="[% Data.ReplyArticleID | html %]"/>
-    <input type="hidden" name="IsVisibleForCustomerPresent" value="1"/>
     <input type="hidden" name="FormDraftTitle" value="[% Data.FormDraftTitle | html %]"/>
     <input type="hidden" name="FormDraftID" value="[% Data.FormDraftID | html %]"/>
     <input type="hidden" name="FormDraftAction" id="FormDraftAction" />
@@ -100,41 +99,12 @@
                     <label class="Mandatory" for="Subject"><span class="Marker">*</span>[% Translate("Subject") | html %]:</label>
                     <div class="Field">
                         <input [% Data.ReadOnly %] type="text" name="Subject" id="Subject" value="[% Data.Subject | html %]" class="Validate_Required [% Data.SubjectInvalid %] W75pc"/>
-                        <div id="SubjectError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
-                        <div id="SubjectServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                     </div>
                     <div class="Clear"></div>
-
-[% RenderBlockStart("Option") %]
-                    <label for="[% Data.Name | html %]">[% Translate(Data.Key) | html %]:</label>
-                    <div class="Field">
-                        [% Data.Value %]
-                        <div id="[% Data.Name | html %]ServerError" class="TooltipErrorMessage"><p>[% Data.Invalid | html %]</p></div>
-                        [% IF Data.FieldExplanation.length %]
-                            <p class="FieldExplanation">[% Translate(Data.FieldExplanation) | html %]</p>
-                        [% END %]
-                    </div>
-                    <div class="Clear"></div>
-[% RenderBlockEnd("Option") %]
-
-[% RenderBlockStart("TicketOptions") %]
-                    <label>[% Translate("Options") | html %]:</label>
-                    <div class="Field">
-
-<!-- OutputFilterHook_TicketOptionsBegin -->
-<!-- OutputFilterHook_TicketOptionsEnd -->
-
-                    </div>
-                    <div class="Clear"></div>
-[% RenderBlockEnd("TicketOptions") %]
-
-<!-- OutputFilterHook_NoTicketOptionsFallback -->
 
                     <label class="Mandatory" for="RichText"><span class="Marker">*</span>[% Translate("Text") | html %]:</label>
                     <div class="RichTextField">
                         <textarea id="RichText" [% Data.ReadOnly %] name="Body" rows="15" cols="[% Config("Ticket::Frontend::TextAreaEmail") %]" class="[% Data.ReadOnlyClass %] RichText Validate_Required [% Data.BodyInvalid | html %]">[% Data.ResponseFormat %]</textarea>
-                        <div id="RichTextError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
-                        <div id="RichTextServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                     </div>
                     <div class="Clear"></div>
 
@@ -150,7 +120,7 @@
 
         </div>
 
-    [% IF Data.DisplayButtons %]
+    [% IF !Data.ReadOnly %]
         <div class="Footer">
             <button class="CallForAction" id="FormDraftUpdate" accesskey="u" title="[% Translate("Update draft") | html %] (u)">
                 <span><i class="fa fa-pencil-square-o"></i> [% Translate("Update draft") | html %]</span>

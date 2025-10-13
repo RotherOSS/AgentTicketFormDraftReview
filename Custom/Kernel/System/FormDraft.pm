@@ -80,7 +80,8 @@ get draft attributes
         FormDraftID    => 123,
         GetContent => 1,                # optional, default 1
 # Rother OSS / AgentTicketFormDraftReview        
-        ObjectID   => 123,              # though security critical, it is optional backward compatibility
+        ObjectID   => 123,              # though it is a security critical point, it remains optional for backward compatibility
+        ObjectType => 'Ticket',         # though it is a security critical point, it remains optional for backward compatibility
 # EO AgentTicketFormDraftReview
         UserID     => 123,
     );
@@ -201,12 +202,21 @@ sub FormDraftGet {
             ChangeBy    => $Row[8],
         );
 # Rother OSS / AgentTicketFormDraftReview
+        # if no $Param{ObjectType} is provided, there is no validation
+        # this validation is important but is kept optional for backward compatibility
+        if ( $Param{ObjectType} && $FormDraft{ObjectType} ne $Param{ObjectType} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "The draft $Param{FormDraftID} is not of the type $Param{ObjectType}!",
+            );
+            return;
+        }
         # if no $Param{ObjectID} is provided, there is no validation
         # this validation is important but is kept optional for backward compatibility
         if ( $Param{ObjectID} && $FormDraft{ObjectID} != $Param{ObjectID} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "The draft does not belong to the ticket!",
+                Message  => "The draft $Param{FormDraftID} does not belong to the $Param{ObjectType} $Param{ObjectID}!",
             );
             return;
         }

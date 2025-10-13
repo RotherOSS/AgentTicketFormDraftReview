@@ -1466,7 +1466,7 @@ sub MaskAgentZoom {
         FormDraft:
         for my $FormDraft ( @{$FormDraftList} ) {
 # Rother OSS / AgentTicketFormDraftReview
-            if ( $FormDraft->{Action} eq 'AgentTicketCompose' ) {
+            if ( $FormDraft->{Action} =~ /^AgentTicketCompose|AgentTicketForward$/ ) {
                 if ($TicketIsLocked) {
                     if ( $UserPermission =~ /^r[ow]$/ ) {
                         $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
@@ -3512,30 +3512,20 @@ sub _GetUserPermissionLevel() {
         return 'owner';
     }
 
-    # otherwise check if user is the current responsible (the last one in ResponsibleList)
-    my @ResponsibleList = $TicketObject->TicketResponsibleList(
-        TicketID => $Self->{TicketID}
-    );
-    if ( $Self->{UserID} == $ResponsibleList[-1] ) {
-        return 'responsible';
-    }
-
     # else check for user ro/rw permissions
-    for my $PermissionType (qw(rw ro)) {
-        if (
-            $TicketObject->TicketPermission(
-                Type     => $PermissionType,
-                TicketID => $Self->{TicketID},
-                UserID   => $Self->{UserID},
-                LogNo    => 1,
-            )
-            )
-        {
-            return $PermissionType;
-        }
+    if (
+        $TicketObject->TicketPermission(
+            Type     => "rw",
+            TicketID => $Self->{TicketID},
+            UserID   => $Self->{UserID},
+            LogNo    => 1,
+        )
+        )
+    {
+        return "rw";
     }
 
-    return;
+    return "ro";
 }
 # EO AgentTicketFormDraftReview
 

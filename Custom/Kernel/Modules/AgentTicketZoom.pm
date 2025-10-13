@@ -1539,7 +1539,12 @@ sub MaskAgentZoom {
                     %{$ActionData},
 
                 };
-
+                $ShownFormDraftActionEntry->{ReadWritePermission} = $TicketObject->TicketPermission(
+                        Type     => "rw",
+                        TicketID => $ShownFormDraftActionEntry->{ObjectID},
+                        UserID   => $Self->{UserID},
+                        LogNo    => 1,
+                );
                 push @FormDrafts, $ShownFormDraftActionEntry;
             }
         }

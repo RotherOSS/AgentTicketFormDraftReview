@@ -49,7 +49,7 @@ sub new {
         $Self->{LoadedFormDraftID} = $ParamObject->LoadFormDraft(
             FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
             UserID      => $Self->{UserID},
-            ObjectID    => 309,
+            ObjectID    => $ParamObject->GetParam( Param => 'TicketID' ),
         );
     }
 
@@ -192,13 +192,22 @@ sub Run {
         }
     }
 
+    print STDERR "**********************************\n";
+    print STDERR $ParamObject->GetParam( Param => 'FormDraftID' );
+    print STDERR "\n**********************************\n";
     # get params
     my %GetParam;
+    #my $FormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
+    #    FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
+    #    ObjectID    => $Ticket{TicketID},
+    #    UserID      => $Self->{UserID},
+    #);
     for (
         qw(To Cc Bcc Subject Body FormDraftID Title)
         )
     {
         $GetParam{$_} = $ParamObject->GetParam( Param => $_ );
+        #$GetParam{$_} = $FormDraft->{FormData}->{$_};
     }
 
     # Make sure sender is correct one. See bug#14872 ( https://bugs.otrs.org/show_bug.cgi?id=14872 ).
@@ -727,6 +736,8 @@ sub _UpdateFormDraft {
         FormID => $MetaParams{FormID},
     );
 
+    use Data::Dumper;
+    print STDERR Dumper $FormDraft;
     # prepare data to add or update draft
     my %FormDraft = (
         FormData    => \%FormData,
@@ -734,7 +745,7 @@ sub _UpdateFormDraft {
         FormDraftID => $MetaParams{FormDraftID},
         ObjectType  => $Param{ObjectType},
         ObjectID    => $Param{ObjectID},
-        Action      => $MetaParams{Action},
+        Action      => $FormDraft->{Action},
         Title       => $MetaParams{FormDraftTitle},
         UserID      => $Param{UserID},
     );

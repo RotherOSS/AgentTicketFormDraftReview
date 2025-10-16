@@ -437,9 +437,6 @@ sub FormDraftUpdate {
     VALIDATEPARAM:
     for my $ValidateParam (qw(ObjectType ObjectID Action)) {
         next VALIDATEPARAM if $Param{$ValidateParam} eq $FormDraft->{$ValidateParam};
-# Rother OSS / AgentTicketFormDraftReview
-        next VALIDATEPARAM if $Param{$ValidateParam} eq 'AgentTicketFormDraftEdit' && $FormDraft->{$ValidateParam} eq 'AgentTicketCompose';
-# EO AgentTicketFormDraftReview
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  =>

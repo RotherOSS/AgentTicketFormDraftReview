@@ -71,14 +71,14 @@ sub new {
         LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
     );
 
-        # add UploadCache data
-        my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
-        for my $File ( @{ $Self->{FormDraft}->{FileData} } ) {
-            return unless $UploadCacheObject->FormIDAddFile(
-                %{$File},
-                FormID => $Self->{FormID},
-            );
-        }
+    # add UploadCache data
+    my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
+    for my $File ( @{ $Self->{FormDraft}->{FileData} } ) {
+        return unless $UploadCacheObject->FormIDAddFile(
+            %{$File},
+            FormID => $Self->{FormID},
+        );
+    }
 
     return $Self;
 }
@@ -87,10 +87,10 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # get needed objects
-    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $TicketObject  = $Kernel::OM->Get('Kernel::System::Ticket');
-    my $ConfigObject  = $Kernel::OM->Get('Kernel::Config');
-    my $ParamObject   = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # check needed stuff
     if ( !$Self->{TicketID} ) {
@@ -166,7 +166,7 @@ sub Run {
     }
 
     my %Ticket = $TicketObject->TicketGet(
-        TicketID      => $Self->{TicketID}
+        TicketID => $Self->{TicketID}
     );
 
     # get lock state
@@ -230,7 +230,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberTo ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElement = $Self->{FormDraft}->{FormData}->{'CustomerTicketText_' . $Count};
+            my $CustomerElement = $Self->{FormDraft}->{FormData}->{ 'CustomerTicketText_' . $Count };
 
             next COUNT unless $CustomerElement;
 
@@ -252,7 +252,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberCc ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElementCc = $Self->{FormDraft}->{FormData}->{'CcCustomerTicketText_' . $Count};
+            my $CustomerElementCc = $Self->{FormDraft}->{FormData}->{ 'CcCustomerTicketText_' . $Count };
 
             next COUNT unless $CustomerElementCc;
 
@@ -274,7 +274,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberBcc ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElementBcc = $Self->{FormDraft}->{FormData}->{'BccCustomerTicketText_' . $Count};
+            my $CustomerElementBcc = $Self->{FormDraft}->{FormData}->{ 'BccCustomerTicketText_' . $Count };
 
             next COUNT unless $CustomerElementBcc;
 
@@ -292,6 +292,7 @@ sub Run {
 
     # update
     if ( $Self->{Subaction} eq 'SendEmail' || $Self->{LoadedFormDraftID} ) {
+
         # challenge token check for write action
         if ( !$Self->{LoadedFormDraftID} ) {
             $LayoutObject->ChallengeTokenCheck();
@@ -330,10 +331,10 @@ sub Run {
         my %FormDraftResponse;
 
         # Perform draft action instead of saving form data in ticket/article.
-        if ( $FormDraftAction) {
+        if ($FormDraftAction) {
 
             my $FormDraftActionOk;
-            if ($FormDraftAction eq 'Update')
+            if ( $FormDraftAction eq 'Update' )
             {
                 $FormDraftActionOk = $Self->_UpdateFormDraft(
                     UserID     => $Self->{UserID},
@@ -406,11 +407,11 @@ sub Run {
                 NextStates => $Self->_GetNextStates(
                     %GetParam,
                 ),
-                ResponseFormat      => $LayoutObject->Ascii2Html( Text => $GetParam{Body} ),
-                Errors              => \%Error,
-                Attachments         => \@Attachments,
-                GetParam            => \%GetParam,
-                TicketBackType      => $TicketBackType,
+                ResponseFormat => $LayoutObject->Ascii2Html( Text => $GetParam{Body} ),
+                Errors         => \%Error,
+                Attachments    => \@Attachments,
+                GetParam       => \%GetParam,
+                TicketBackType => $TicketBackType,
                 %Ticket,
                 %GetParam,
             );
@@ -443,7 +444,7 @@ sub _Mask {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # get config for frontend module
-    my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
+    my $Config             = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
     my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
 
     $LayoutObject->Block(

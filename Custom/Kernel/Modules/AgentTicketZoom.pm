@@ -1397,11 +1397,11 @@ sub MaskAgentZoom {
     }
 # Rother OSS / AgentTicketFormDraftReview
 #    # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
-    # get user authorization level (owner, responsible, rw, ro)
+# get user authorization level (owner, responsible, rw, ro)
     my $UserPermission = $Self->_GetUserPermissionLevel();
 
     # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
-# EO AgentTicketFormDraftReview    
+# EO AgentTicketFormDraftReview
     my %ActionConfig = (
         AgentTicketCompose => {
             Link           => 'Action=AgentTicketCompose;TicketID=[% Data.TicketID | uri %]',
@@ -1428,13 +1428,13 @@ sub MaskAgentZoom {
             Name           => Translatable('Reply'),
             TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Reply'),
         },
-# EO AgentTicketFormDraftReview    
+# EO AgentTicketFormDraftReview
     );
     ACTION:
 # Rother OSS / AgentTicketFormDraftReview
 #    for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
     for my $Action (qw(AgentTicketCompose AgentTicketForward AgentTicketFormDraftEdit)) {
-# EO AgentTicketFormDraftReview    
+# EO AgentTicketFormDraftReview
         next ACTION if !$ConfigObject->Get('Frontend::Module')->{$Action};
         next ACTION if !$AclActionLookup{$Action};
 
@@ -1450,7 +1450,7 @@ sub MaskAgentZoom {
         $ActionLookup{$Action} = $ActionConfig{$Action};
     }
 
-    # Get and show available FormDrafts.
+# Get and show available FormDrafts.
     my %ShownFormDraftEntries;
     my $FormDraftList = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftListGet(
         ObjectType => 'Ticket',
@@ -1461,7 +1461,7 @@ sub MaskAgentZoom {
     my $TicketIsLocked = $TicketObject->TicketLockGet(
         TicketID => $Self->{TicketID}
     );
-# EO AgentTicketFormDraftReview    
+# EO AgentTicketFormDraftReview
     if ( IsArrayRefWithData($FormDraftList) ) {
         FormDraft:
         for my $FormDraft ( @{$FormDraftList} ) {
@@ -1476,7 +1476,7 @@ sub MaskAgentZoom {
                     $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
                 }
             }
-# EO AgentTicketFormDraftReview    
+# EO AgentTicketFormDraftReview
             next FormDraft if !$ActionLookup{ $FormDraft->{Action} };
             push @{ $ShownFormDraftEntries{ $FormDraft->{Action} } }, $FormDraft;
         }
@@ -1540,10 +1540,10 @@ sub MaskAgentZoom {
 
                 };
                 $ShownFormDraftActionEntry->{ReadWritePermission} = $TicketObject->TicketPermission(
-                        Type     => "rw",
-                        TicketID => $ShownFormDraftActionEntry->{ObjectID},
-                        UserID   => $Self->{UserID},
-                        LogNo    => 1,
+                    Type     => "rw",
+                    TicketID => $ShownFormDraftActionEntry->{ObjectID},
+                    UserID   => $Self->{UserID},
+                    LogNo    => 1,
                 );
                 push @FormDrafts, $ShownFormDraftActionEntry;
             }
@@ -3499,7 +3499,6 @@ sub _GetIncludedFieldOrdered {
 
     return @Return;
 }
-
 # Rother OSS / AgentTicketFormDraftReview
 sub _GetUserPermissionLevel() {
     my ( $Self, %Param ) = @_;

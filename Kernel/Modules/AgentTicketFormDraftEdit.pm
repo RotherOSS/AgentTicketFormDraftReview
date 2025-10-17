@@ -46,11 +46,12 @@ sub new {
         && $ParamObject->GetParam( Param => 'FormDraftID' )
         )
     {
-        $Self->{LoadedFormDraftID} = $ParamObject->LoadFormDraft(
+        $Self->{FormDraft} = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
             FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
-            UserID      => $Self->{UserID},
             ObjectID    => $ParamObject->GetParam( Param => 'TicketID' ),
+            UserID      => $Self->{UserID},
         );
+        $Self->{LoadedFormDraftID} = $Self->{FormDraft}->{FormDraftID};
     }
 
     $Self->{Debug} = $Param{Debug} || 0;
@@ -69,6 +70,15 @@ sub new {
         ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
         LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
     );
+
+        # add UploadCache data
+        my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
+        for my $File ( @{ $Self->{FormDraft}->{FileData} } ) {
+            return unless $UploadCacheObject->FormIDAddFile(
+                %{$File},
+                FormID => $Self->{FormID},
+            );
+        }
 
     return $Self;
 }
@@ -192,22 +202,14 @@ sub Run {
         }
     }
 
-    print STDERR "**********************************\n";
-    print STDERR $ParamObject->GetParam( Param => 'FormDraftID' );
-    print STDERR "\n**********************************\n";
     # get params
     my %GetParam;
-    #my $FormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
-    #    FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
-    #    ObjectID    => $Ticket{TicketID},
-    #    UserID      => $Self->{UserID},
-    #);
+
     for (
-        qw(To Cc Bcc Subject Body FormDraftID Title)
+        qw(To Cc Bcc Subject Body)
         )
     {
-        $GetParam{$_} = $ParamObject->GetParam( Param => $_ );
-        #$GetParam{$_} = $FormDraft->{FormData}->{$_};
+        $GetParam{$_} = $Self->{FormDraft}->{FormData}->{$_};
     }
 
     # Make sure sender is correct one. See bug#14872 ( https://bugs.otrs.org/show_bug.cgi?id=14872 ).
@@ -216,7 +218,7 @@ sub Run {
         UserID  => $Self->{UserID},
     );
 
-    my $CustomersNumberTo = $ParamObject->GetParam( Param => 'CustomerTicketCounterToCustomer' ) || 0;
+    my $CustomersNumberTo = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterToCustomer} || 0;
 
     # get check item object
     my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
@@ -228,7 +230,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberTo ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElement = $ParamObject->GetParam( Param => 'CustomerTicketText_' . $Count );
+            my $CustomerElement = $Self->{FormDraft}->{FormData}->{'CustomerTicketText_' . $Count};
 
             next COUNT unless $CustomerElement;
 
@@ -241,7 +243,7 @@ sub Run {
         }
     }
 
-    my $CustomersNumberCc = $ParamObject->GetParam( Param => 'CustomerTicketCounterCcCustomer' ) || 0;
+    my $CustomersNumberCc = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterCcCustomer} || 0;
 
     if ($CustomersNumberCc) {
         my $CustomerCounterCc = 1;
@@ -250,7 +252,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberCc ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElementCc = $ParamObject->GetParam( Param => 'CcCustomerTicketText_' . $Count );
+            my $CustomerElementCc = $Self->{FormDraft}->{FormData}->{'CcCustomerTicketText_' . $Count};
 
             next COUNT unless $CustomerElementCc;
 
@@ -263,7 +265,7 @@ sub Run {
         }
     }
 
-    my $CustomersNumberBcc = $ParamObject->GetParam( Param => 'CustomerTicketCounterBccCustomer' ) || 0;
+    my $CustomersNumberBcc = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterBccCustomer} || 0;
 
     if ($CustomersNumberBcc) {
         my $CustomerCounterBcc = 1;
@@ -272,7 +274,7 @@ sub Run {
         for my $Count ( 1 .. $CustomersNumberBcc ) {
             last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-            my $CustomerElementBcc = $ParamObject->GetParam( Param => 'BccCustomerTicketText_' . $Count );
+            my $CustomerElementBcc = $Self->{FormDraft}->{FormData}->{'BccCustomerTicketText_' . $Count};
 
             next COUNT unless $CustomerElementBcc;
 
@@ -327,77 +329,11 @@ sub Run {
 
         my %FormDraftResponse;
 
-        # Check draft name.
-        if (
-            $FormDraftAction
-            &&
-            ( $FormDraftAction eq 'Add' || $FormDraftAction eq 'Update' )
-            )
-        {
-            my $Title = $ParamObject->GetParam( Param => 'FormDraftTitle' );
-
-            # A draft name is required.
-            if ( !$Title ) {
-
-                %FormDraftResponse = (
-                    Success      => 0,
-                    ErrorMessage => $Kernel::OM->Get('Kernel::Language')->Translate("Draft name is required!"),
-                );
-            }
-
-            # Chosen draft name must be unique.
-            else {
-                my $FormDraftList = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftListGet(
-                    ObjectType => 'Ticket',
-                    ObjectID   => $Self->{TicketID},
-                    Action     => $Self->{Action},
-                    UserID     => $Self->{UserID},
-                );
-                DRAFT:
-                for my $FormDraft ( @{$FormDraftList} ) {
-
-                    # No existing draft with same name.
-                    next DRAFT if $Title ne $FormDraft->{Title};
-
-                    # Same name for update on existing draft.
-                    if (
-                        $GetParam{FormDraftID}
-                        && $FormDraftAction eq 'Update'
-                        && $GetParam{FormDraftID} eq $FormDraft->{FormDraftID}
-                        )
-                    {
-                        next DRAFT;
-                    }
-
-                    # Another draft with the chosen name already exists.
-                    %FormDraftResponse = (
-                        Success      => 0,
-                        ErrorMessage => $Kernel::OM->Get('Kernel::Language')->Translate( "FormDraft name %s is already in use!", $Title ),
-                    );
-                    last DRAFT;
-                }
-            }
-        }
-
         # Perform draft action instead of saving form data in ticket/article.
-        if ( $FormDraftAction && !%FormDraftResponse ) {
-
-            # Reset FormDraftID to prevent updating existing draft.
-            if ( $FormDraftAction eq 'Add' && $GetParam{FormDraftID} ) {
-
-                # meddling with the innards of Kernel::System::Web::Request
-                $ParamObject->SetArray(
-                    Param  => 'FormDraftID',
-                    Values => ['']
-                );
-            }
+        if ( $FormDraftAction) {
 
             my $FormDraftActionOk;
-            if (
-                $FormDraftAction eq 'Add'
-                ||
-                ( $FormDraftAction eq 'Update' && $GetParam{FormDraftID} )
-                )
+            if ($FormDraftAction eq 'Update')
             {
                 $FormDraftActionOk = $Self->_UpdateFormDraft(
                     UserID     => $Self->{UserID},
@@ -736,8 +672,6 @@ sub _UpdateFormDraft {
         FormID => $MetaParams{FormID},
     );
 
-    use Data::Dumper;
-    print STDERR Dumper $FormDraft;
     # prepare data to add or update draft
     my %FormDraft = (
         FormData    => \%FormData,

@@ -18,12 +18,7 @@
     <input type="hidden" name="Action" value="[% Env("Action") %]"/>
     <input type="hidden" name="Subaction" value="SendEmail"/>
     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
-    <input type="hidden" name="Email" value="[% Data.Email | html %]"/>
-    <input type="hidden" name="InReplyTo" value="[% Data.InReplyTo | html %]"/>
-    <input type="hidden" name="References" value="[% Data.References | html %]"/>
     <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
-    <input type="hidden" name="ResponseID" value="[% Data.ResponseID | html %]"/>
-    <input type="hidden" name="ReplyArticleID" value="[% Data.ReplyArticleID | html %]"/>
     <input type="hidden" name="FormDraftTitle" value="[% Data.FormDraftTitle | html %]"/>
     <input type="hidden" name="FormDraftID" value="[% Data.FormDraftID | html %]"/>
     <input type="hidden" name="FormDraftAction" id="FormDraftAction" />
@@ -110,7 +105,7 @@
 
                     <label>[% Translate("Attachments") | html %]:</label>
                     <div class="Field">
-[% INCLUDE "FormElements/AttachmentList.tt" %]
+[% INCLUDE "FormElements/AttachmentListDraftEdit.tt" %]
                     </div>
                     <div class="Clear"></div>
 
@@ -124,10 +119,6 @@
         <div class="Footer">
             <button class="CallForAction" id="FormDraftUpdate" accesskey="u" title="[% Translate("Update draft") | html %] (u)">
                 <span><i class="fa fa-pencil-square-o"></i> [% Translate("Update draft") | html %]</span>
-            </button>
-            &nbsp;[% Translate("or") | html %]&nbsp;
-            <button class="CallForAction" id="FormDraftSave" accesskey="s" title="[% Translate("Save as new draft") | html %] (s)">
-                <span><i class="fa fa-pencil-square-o"></i> [% Translate("Save as new draft") | html %]</span>
             </button>
         </div>
     [% END %]

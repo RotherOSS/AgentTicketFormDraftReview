@@ -53,27 +53,12 @@
             <th class="Delete"></th>
         </thead>
         <tbody>
-# Rother OSS / AgentTicketFormDraftReview        
-#        [% FOREACH Data IN Data.DataList %]
-#            <tr>
-#                <td class="Filename ooo12g">[% Data.Filename | html %]</td>
-#                <td class="Filetype ooo12g">[% Data.ContentType | html %]</td>
-#                <td class="Filesize ooo12g" data-file-size="[% Data.Filesize | html %]">[% Data.Filesize | Localize('Filesize') | html %]</td>
-#            [% IF Data.DisplayButtons %]
-#                <td class="Delete ooo12g">
-#                    <a href="#" class="DataDelete" aria-label="[% Translate("Click to delete this Data.") | html %]" tabindex="0" data-file-id="[% Data.FileID | html %]" data-object-id="[% Data.ObjectID | html %]" data-field-id="[% Data.FieldID | html %]" data-delete-action="[% Data.DeleteAction | html %]">
-#                        <i class="fa fa-trash"></i>
-#                    </a>
-#                </td>
-#            [% END %]
-#            </tr>
-#        [% END %]
         [% FOREACH Attachment IN Data.AttachmentList %]
             <tr>
                 <td class="Filename ooo12g">[% Attachment.Filename | html %]</td>
                 <td class="Filetype ooo12g">[% Attachment.ContentType | html %]</td>
                 <td class="Filesize ooo12g" data-file-size="[% Attachment.Filesize | html %]">[% Attachment.Filesize | Localize('Filesize') | html %]</td>
-            [% IF Data.DisplayButtons %]
+            [% IF !Data.ReadOnly %]
                 <td class="Delete ooo12g">
                     <a href="#" class="AttachmentDelete" aria-label="[% Translate("Click to delete this attachment.") | html %]" tabindex="0" data-file-id="[% Attachment.FileID | html %]" data-object-id="[% Attachment.ObjectID | html %]" data-field-id="[% Attachment.FieldID | html %]" data-delete-action="[% Attachment.DeleteAction | html %]">
                         <i class="fa fa-trash"></i>
@@ -82,14 +67,12 @@
             [% END %]
             </tr>
         [% END %]
-# EO AgentTicketFormDraftReview        
         </tbody>
     </table>
     <span class="Busy">
         <i class="fa fa-spinner fa-spin"></i>
     </span>
 </div>
-# Rother OSS / AgentTicketFormDraftReview        
 [% IF !Data.ReadOnly %]
     <input
         class="AjaxDnDUpload [% IF ACLHidden && Mandatory %]Validate_DnDUpload_IfVisible[% ELSIF Mandatory %]Validate_DnDUpload[% END %]"

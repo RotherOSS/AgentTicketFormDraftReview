@@ -37,38 +37,6 @@ sub new {
     # allocate new hash for object
     my $Self = bless {%Param}, $Type;
 
-    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
-
-    # Try to load draft if requested.
-    if (
-        $Kernel::OM->Get('Kernel::Config')->Get("Ticket::Frontend::$Self->{Action}")->{FormDraft}
-        && $ParamObject->GetParam( Param => 'LoadFormDraft' )
-        && $ParamObject->GetParam( Param => 'FormDraftID' )
-        )
-    {
-        $Self->{FormDraft} = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
-            FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
-            ObjectID    => $ParamObject->GetParam( Param => 'TicketID' ),
-            UserID      => $Self->{UserID},
-        );
-        $Self->{LoadedFormDraftID} = $Self->{FormDraft}->{FormDraftID};
-    }
-
-    # get form id
-    $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
-        ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
-        LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
-    );
-
-    # add UploadCache data
-    my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
-    for my $File ( @{ $Self->{FormDraft}->{FileData} } ) {
-        return unless $UploadCacheObject->FormIDAddFile(
-            %{$File},
-            FormID => $Self->{FormID},
-        );
-    }
-
     return $Self;
 }
 
@@ -81,10 +49,14 @@ sub Run {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
 
+    # get Ticket and FormDraftID
+    my $TicketID    = $ParamObject->GetParam( Param => 'TicketID' );
+    my $FormDraftID = $ParamObject->GetParam( Param => 'FormDraftID' );
+
     # check needed stuff
-    if ( !$Self->{TicketID} ) {
+    if ( !$TicketID || !$FormDraftID ) {
         return $LayoutObject->ErrorScreen(
-            Message => Translatable('No TicketID is given!'),
+            Message => Translatable('Need TicketID and FormDraftID!'),
             Comment => Translatable('Please contact the administrator.'),
         );
     }
@@ -98,7 +70,7 @@ sub Run {
         if (
             $TicketObject->TicketPermission(
                 Type     => $AccessType,
-                TicketID => $Self->{TicketID},
+                TicketID => $TicketID,
                 UserID   => $Self->{UserID},
                 LogNo    => 1,
             )
@@ -124,7 +96,7 @@ sub Run {
     my $ACL = $TicketObject->TicketAcl(
         Data          => \%PossibleActions,
         Action        => $Self->{Action},
-        TicketID      => $Self->{TicketID},
+        TicketID      => $TicketID,
         ReturnType    => 'Action',
         ReturnSubType => '-',
         UserID        => $Self->{UserID},
@@ -133,7 +105,6 @@ sub Run {
 
     # check if ACL restrictions exist
     if ($ACL) {
-
         my %AclActionLookup = reverse %AclAction;
 
         # show error screen if ACL prohibits this action
@@ -142,161 +113,126 @@ sub Run {
         }
     }
 
+    my $FormDraftObject   = $Kernel::OM->Get('Kernel::System::FormDraft');
+    my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
+
+    my $FormDraft = $FormDraftObject->FormDraftGet(
+        FormDraftID => $FormDraftID,
+        ObjectID    => $TicketID,
+        UserID      => $Self->{UserID},
+    );
+
     # Check for failed draft loading request.
-    if (
-        $ParamObject->GetParam( Param => 'LoadFormDraft' )
-        && !$Self->{LoadedFormDraftID}
-        )
-    {
+    if ( !$FormDraft->{FormDraftID} ) {
         return $LayoutObject->ErrorScreen(
             Message => Translatable('Loading draft failed!'),
             Comment => Translatable('Please contact the administrator.'),
         );
     }
 
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID => $Self->{TicketID}
+    # get form id
+    $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
+        ParamObject  => $ParamObject,
+        LayoutObject => $LayoutObject,
     );
 
-    # get lock state
-    my $TicketBackType = 'TicketBack';
-    if ( $Config->{RequiredLock} ) {
-        if ( !$TicketObject->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
+    if ( !$Self->{Subaction} ) {
 
-            my $Lock = $TicketObject->TicketLockSet(
-                TicketID => $Self->{TicketID},
-                Lock     => 'lock',
-                UserID   => $Self->{UserID}
-            );
+        # Prepare To, Cc and Bcc from form data
+        my $To  = '';
+        my $Cc  = '';
+        my $Bcc = '';
 
-            # Set new owner if ticket owner is different then logged user.
-            if ( $Lock && ( $Ticket{OwnerID} != $Self->{UserID} ) ) {
+        my $CustomersNumberTo = $FormDraft->{FormData}->{CustomerTicketCounterToCustomer} || 0;
 
-                # Remember previous owner, which will be used to restore ticket owner on undo action.
-                $Ticket{PreviousOwner} = $Ticket{OwnerID};
+        if ($CustomersNumberTo) {
+            my $CustomerCounter = 1;
 
-                my $Success = $TicketObject->TicketOwnerSet(
-                    TicketID  => $Self->{TicketID},
-                    UserID    => $Self->{UserID},
-                    NewUserID => $Self->{UserID},
-                );
+            COUNT:
+            for my $Count ( 1 .. $CustomersNumberTo ) {
+                last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
 
-                # Show lock state.
-                if ( !$Success ) {
-                    return $LayoutObject->FatalError();
+                my $CustomerElement = $FormDraft->{FormData}->{ 'CustomerTicketText_' . $Count };
+
+                next COUNT unless $CustomerElement;
+
+                if ( $To ) {
+                    $To .= ', ' . $CustomerElement;
+                }
+                else {
+                    $To = $CustomerElement;
                 }
             }
+        }
 
-            $TicketBackType .= 'Undo';
+        my $CustomersNumberCc = $FormDraft->{FormData}->{CustomerTicketCounterCcCustomer} || 0;
+
+        if ($CustomersNumberCc) {
+            my $CustomerCounterCc = 1;
+
+            COUNT:
+            for my $Count ( 1 .. $CustomersNumberCc ) {
+                last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
+
+                my $CustomerElementCc = $FormDraft->{FormData}->{ 'CcCustomerTicketText_' . $Count };
+
+                next COUNT unless $CustomerElementCc;
+
+                if ( $Cc ) {
+                    $Cc .= ', ' . $CustomerElementCc;
+                }
+                else {
+                    $Cc = $CustomerElementCc;
+                }
+            }
+        }
+
+        my $CustomersNumberBcc = $FormDraft->{FormData}->{CustomerTicketCounterBccCustomer} || 0;
+
+        if ($CustomersNumberBcc) {
+            my $CustomerCounterBcc = 1;
+
+            COUNT:
+            for my $Count ( 1 .. $CustomersNumberBcc ) {
+                last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
+
+                my $CustomerElementBcc = $FormDraft->{FormData}->{ 'BccCustomerTicketText_' . $Count };
+
+                next COUNT unless $CustomerElementBcc;
+
+                if ( $Bcc ) {
+                    $Bcc .= ', ' . $CustomerElementBcc;
+                }
+                else {
+                    $Bcc = $CustomerElementBcc;
+                }
+            }
+        }
+
+        # add UploadCache data
+        for my $File ( @{ $FormDraft->{FileData} } ) {
+            return unless $UploadCacheObject->FormIDAddFile(
+                %{$File},
+                FormID => $Self->{FormID},
+            );
         }
     }
 
-    # get params
-    my %GetParam;
-
-    for (
-        qw(To Cc Bcc Subject Body)
-        )
-    {
-        $GetParam{$_} = $Self->{FormDraft}->{FormData}->{$_};
-    }
-
-    # Make sure sender is correct one. See bug#14872 ( https://bugs.otrs.org/show_bug.cgi?id=14872 ).
-    $GetParam{From} = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->Sender(
-        QueueID => $Ticket{QueueID},
-        UserID  => $Self->{UserID},
-    );
-
-    my $CustomersNumberTo = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterToCustomer} || 0;
-
-    # get check item object
-    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
-
-    if ($CustomersNumberTo) {
-        my $CustomerCounter = 1;
-
-        COUNT:
-        for my $Count ( 1 .. $CustomersNumberTo ) {
-            last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
-
-            my $CustomerElement = $Self->{FormDraft}->{FormData}->{ 'CustomerTicketText_' . $Count };
-
-            next COUNT unless $CustomerElement;
-
-            if ( $GetParam{To} ) {
-                $GetParam{To} .= ', ' . $CustomerElement;
-            }
-            else {
-                $GetParam{To} = $CustomerElement;
-            }
-        }
-    }
-
-    my $CustomersNumberCc = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterCcCustomer} || 0;
-
-    if ($CustomersNumberCc) {
-        my $CustomerCounterCc = 1;
-
-        COUNT:
-        for my $Count ( 1 .. $CustomersNumberCc ) {
-            last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
-
-            my $CustomerElementCc = $Self->{FormDraft}->{FormData}->{ 'CcCustomerTicketText_' . $Count };
-
-            next COUNT unless $CustomerElementCc;
-
-            if ( $GetParam{Cc} ) {
-                $GetParam{Cc} .= ', ' . $CustomerElementCc;
-            }
-            else {
-                $GetParam{Cc} = $CustomerElementCc;
-            }
-        }
-    }
-
-    my $CustomersNumberBcc = $Self->{FormDraft}->{FormData}->{CustomerTicketCounterBccCustomer} || 0;
-
-    if ($CustomersNumberBcc) {
-        my $CustomerCounterBcc = 1;
-
-        COUNT:
-        for my $Count ( 1 .. $CustomersNumberBcc ) {
-            last COUNT if $Count > 1_000;    # bail out when the number of customers is abnormally high
-
-            my $CustomerElementBcc = $Self->{FormDraft}->{FormData}->{ 'BccCustomerTicketText_' . $Count };
-
-            next COUNT unless $CustomerElementBcc;
-
-            if ( $GetParam{Bcc} ) {
-                $GetParam{Bcc} .= ', ' . $CustomerElementBcc;
-            }
-            else {
-                $GetParam{Bcc} = $CustomerElementBcc;
-            }
-        }
-    }
-
-    # get upload cache object
-    my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
-
-    # update
-    if ( $Self->{Subaction} eq 'SendEmail' || $Self->{LoadedFormDraftID} ) {
+    elsif ( $Self->{Subaction} eq 'FormDraftUpdate' ) {
 
         # challenge token check for write action
-        if ( !$Self->{LoadedFormDraftID} ) {
+        if ( !$FormDraftID ) {
             $LayoutObject->ChallengeTokenCheck();
         }
 
-        # get valid state id
-        if ( !$GetParam{StateID} ) {
-            my %Ticket = $TicketObject->TicketGet(
-                TicketID => $Self->{TicketID},
-                UserID   => 1,
-            );
-            $GetParam{StateID} = $Ticket{StateID};
+        my %GetParam;
+
+        for my $Key ( qw(Subject Body) ) {
+            $GetParam{ $Key } = $ParamObject->GetParam( Param => $Key );
         }
 
-        my %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet( ID => $GetParam{StateID} );
+### continue here
+
 
         my %Error;
 
@@ -308,16 +244,6 @@ sub Run {
             FormID => $Self->{FormID},
         );
 
-        # Get and validate draft action.
-        my $FormDraftAction = $ParamObject->GetParam( Param => 'FormDraftAction' );
-        if ( $FormDraftAction && !$Config->{FormDraft} ) {
-            return $LayoutObject->ErrorScreen(
-                Message => Translatable('FormDraft functionality disabled!'),
-                Comment => Translatable('Please contact the administrator.'),
-            );
-        }
-
-        my %FormDraftResponse;
 
         # Perform draft action instead of saving form data in ticket/article.
         if ($FormDraftAction) {
@@ -328,7 +254,7 @@ sub Run {
                 $FormDraftActionOk = $Self->_UpdateFormDraft(
                     UserID     => $Self->{UserID},
                     ObjectType => 'Ticket',
-                    ObjectID   => $Self->{TicketID},
+                    ObjectID   => $TicketID,
                 );
             }
             elsif ( $FormDraftAction eq 'Delete' && $GetParam{FormDraftID} ) {
@@ -367,7 +293,7 @@ sub Run {
         }
 
         # Make sure we don't save form if a draft was loaded.
-        if ( $Self->{LoadedFormDraftID} ) {
+        if ( $FormDraftID ) {
             %Error = ( LoadedFormDraft => 1 );
         }
 
@@ -392,7 +318,7 @@ sub Run {
 
             $GetParam{StandardResponse} = $GetParam{Body};
             $Output .= $Self->_Mask(
-                TicketID   => $Self->{TicketID},
+                TicketID   => $TicketID,
                 NextStates => $Self->_GetNextStates(
                     %GetParam,
                 ),
@@ -410,19 +336,6 @@ sub Run {
             return $Output;
         }
     }
-}
-
-sub _GetNextStates {
-    my ( $Self, %Param ) = @_;
-
-    # get next states
-    my %NextStates = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateList(
-        %Param,
-        Action   => $Self->{Action},
-        TicketID => $Self->{TicketID},
-        UserID   => $Self->{UserID},
-    );
-    return \%NextStates;
 }
 
 sub _Mask {
@@ -475,16 +388,16 @@ sub _Mask {
     }
 
     my $LoadedFormDraft;
-    if ( $Self->{LoadedFormDraftID} ) {
+    if ( $FormDraftID ) {
         $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
-            FormDraftID => $Self->{LoadedFormDraftID},
+            FormDraftID => $FormDraftID,
             GetContent  => 0,
-            ObjectID    => $Self->{TicketID},
+            ObjectID    => $TicketID,
             UserID      => $Self->{UserID},
         );
 
         my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
-            TicketID => $Self->{TicketID},
+            TicketID => $TicketID,
             OnlyLast => 1,
         );
 
@@ -560,7 +473,7 @@ sub _Mask {
         Data         => {
             FormID         => $Self->{FormID},
             FormDraft      => $Config->{FormDraft},
-            FormDraftID    => $Self->{LoadedFormDraftID},
+            FormDraftID    => $FormDraftID,
             FormDraftTitle => $LoadedFormDraft ? $LoadedFormDraft->{Title} : '',
             FormDraftMeta  => $LoadedFormDraft,
             %Param,

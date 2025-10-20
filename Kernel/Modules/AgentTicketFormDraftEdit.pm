@@ -56,15 +56,6 @@ sub new {
 
     $Self->{Debug} = $Param{Debug} || 0;
 
-    # frontend specific config
-    my $Config = $Kernel::OM->Get('Kernel::Config')->Get("Ticket::Frontend::$Self->{Action}");
-
-    my $Definition = $Kernel::OM->Get('Kernel::System::Ticket::Mask')->DefinitionGet(
-        Mask => $Self->{Action},
-    ) || {};
-
-    $Self->{MaskDefinition} = $Definition->{Mask};
-
     # get form id
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
         ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),

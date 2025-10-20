@@ -54,8 +54,6 @@ sub new {
         $Self->{LoadedFormDraftID} = $Self->{FormDraft}->{FormDraftID};
     }
 
-    $Self->{Debug} = $Param{Debug} || 0;
-
     # get form id
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
         ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),

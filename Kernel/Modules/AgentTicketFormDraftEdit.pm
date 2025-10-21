@@ -37,6 +37,12 @@ sub new {
     # allocate new hash for object
     my $Self = bless {%Param}, $Type;
 
+    # get form id
+    $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
+        ParamObject  => $ParamObject,
+        LayoutObject => $LayoutObject,
+    );
+
     return $Self;
 }
 
@@ -130,12 +136,6 @@ sub Run {
         );
     }
 
-    # get form id
-    $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
-        ParamObject  => $ParamObject,
-        LayoutObject => $LayoutObject,
-    );
-
     if ( !$Self->{Subaction} ) {
 
         # Prepare To, Cc and Bcc from form data
@@ -216,6 +216,9 @@ sub Run {
                 FormID => $Self->{FormID},
             );
         }
+
+        ### continue with preparation and _Mask
+
     }
 
     elsif ( $Self->{Subaction} eq 'FormDraftUpdate' ) {
@@ -231,6 +234,11 @@ sub Run {
             $GetParam{ $Key } = $ParamObject->GetParam( Param => $Key );
         }
 
+        # get all attachments meta data
+        my @Attachments = $UploadCacheObject->FormIDGetAllFilesMeta(
+            FormID => $Self->{FormID},
+        );
+
 ### continue here
 
 
@@ -238,11 +246,6 @@ sub Run {
 
         # get check item object
         my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
-
-        # get all attachments meta data
-        my @Attachments = $UploadCacheObject->FormIDGetAllFilesMeta(
-            FormID => $Self->{FormID},
-        );
 
 
         # Perform draft action instead of saving form data in ticket/article.

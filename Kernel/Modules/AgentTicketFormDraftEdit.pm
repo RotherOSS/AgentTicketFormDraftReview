@@ -38,6 +38,8 @@ sub new {
     my $Self = bless {%Param}, $Type;
 
     # get form id
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
         ParamObject  => $ParamObject,
         LayoutObject => $LayoutObject,
@@ -136,6 +138,10 @@ sub Run {
         );
     }
 
+    my %Ticket = $TicketObject->TicketGet(
+        TicketID => $TicketID
+    );
+
     if ( !$Self->{Subaction} ) {
 
         # Prepare To, Cc and Bcc from form data
@@ -156,7 +162,7 @@ sub Run {
 
                 next COUNT unless $CustomerElement;
 
-                if ( $To ) {
+                if ($To) {
                     $To .= ', ' . $CustomerElement;
                 }
                 else {
@@ -178,7 +184,7 @@ sub Run {
 
                 next COUNT unless $CustomerElementCc;
 
-                if ( $Cc ) {
+                if ($Cc) {
                     $Cc .= ', ' . $CustomerElementCc;
                 }
                 else {
@@ -200,7 +206,7 @@ sub Run {
 
                 next COUNT unless $CustomerElementBcc;
 
-                if ( $Bcc ) {
+                if ($Bcc) {
                     $Bcc .= ', ' . $CustomerElementBcc;
                 }
                 else {
@@ -217,8 +223,43 @@ sub Run {
             );
         }
 
-        ### continue with preparation and _Mask
+        my $Output = $LayoutObject->Header(
+            Value     => $Ticket{TicketNumber},
+            Type      => 'Small',
+            BodyClass => 'Popup',
+        );
 
+        # When a draft is loaded, inform a user that article subject will be empty
+        # if contains only the ticket hook (if nothing is modified).
+        $Output .= $LayoutObject->Notify(
+            Data => $LayoutObject->{LanguageObject}->Translate(
+                'Article subject will be empty if the subject contains only the ticket hook!'
+            ),
+        );
+
+        my $From = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->Sender(
+            QueueID => $Ticket{QueueID},
+            UserID  => $Self->{UserID},
+        );
+        my @Attachments = $UploadCacheObject->FormIDGetAllFilesMeta(
+            FormID => $Self->{FormID},
+        );
+
+        $Output .= $Self->_Mask(
+            TicketID       => $TicketID,
+            ResponseFormat => $FormDraft->{FormData}->{Body},
+            Attachments    => \@Attachments,
+            FormDraftID    => $FormDraftID,
+            To             => $To,
+            Cc             => $Cc,
+            Bcc            => $Bcc,
+            From           => $From,
+            Subject        => $FormDraft->{FormData}->{Subject},
+        );
+        $Output .= $LayoutObject->Footer(
+            Type => 'Small',
+        );
+        return $Output;
     }
 
     elsif ( $Self->{Subaction} eq 'FormDraftUpdate' ) {
@@ -228,116 +269,34 @@ sub Run {
             $LayoutObject->ChallengeTokenCheck();
         }
 
-        my %GetParam;
-
-        for my $Key ( qw(Subject Body) ) {
-            $GetParam{ $Key } = $ParamObject->GetParam( Param => $Key );
+        my %FormDraftResponse;
+        my $FormDraftActionOk = $Self->_UpdateFormDraft(
+            UserID     => $Self->{UserID},
+            ObjectType => 'Ticket',
+            ObjectID   => $TicketID,
+        );
+        if ($FormDraftActionOk) {
+            $FormDraftResponse{Success} = 1;
+        }
+        else {
+            %FormDraftResponse = (
+                Success      => 0,
+                ErrorMessage => 'Could not perform requested draft action!',
+            );
         }
 
-        # get all attachments meta data
-        my @Attachments = $UploadCacheObject->FormIDGetAllFilesMeta(
-            FormID => $Self->{FormID},
+        # build JSON output
+        my $JSON = $LayoutObject->JSONEncode(
+            Data => \%FormDraftResponse,
         );
 
-### continue here
-
-
-        my %Error;
-
-        # get check item object
-        my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
-
-
-        # Perform draft action instead of saving form data in ticket/article.
-        if ($FormDraftAction) {
-
-            my $FormDraftActionOk;
-            if ( $FormDraftAction eq 'Update' )
-            {
-                $FormDraftActionOk = $Self->_UpdateFormDraft(
-                    UserID     => $Self->{UserID},
-                    ObjectType => 'Ticket',
-                    ObjectID   => $TicketID,
-                );
-            }
-            elsif ( $FormDraftAction eq 'Delete' && $GetParam{FormDraftID} ) {
-                $FormDraftActionOk = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
-                    FormDraftID => $GetParam{FormDraftID},
-                    UserID      => $Self->{UserID},
-                );
-            }
-
-            if ($FormDraftActionOk) {
-                $FormDraftResponse{Success} = 1;
-            }
-            else {
-                %FormDraftResponse = (
-                    Success      => 0,
-                    ErrorMessage => 'Could not perform requested draft action!',
-                );
-            }
-        }
-
-        # Return JSON when there already is a response
-        if (%FormDraftResponse) {
-
-            # build JSON output
-            my $JSON = $LayoutObject->JSONEncode(
-                Data => \%FormDraftResponse,
-            );
-
-            # send JSON response
-            return $LayoutObject->Attachment(
-                ContentType => 'application/json',
-                Content     => $JSON,
-                Type        => 'inline',
-                NoCache     => 1,
-            );
-        }
-
-        # Make sure we don't save form if a draft was loaded.
-        if ( $FormDraftID ) {
-            %Error = ( LoadedFormDraft => 1 );
-        }
-
-        # check errors
-        if (%Error) {
-
-            my $Output = $LayoutObject->Header(
-                Value     => $Ticket{TicketNumber},
-                Type      => 'Small',
-                BodyClass => 'Popup',
-            );
-
-            # When a draft is loaded, inform a user that article subject will be empty
-            # if contains only the ticket hook (if nothing is modified).
-            if ( $Error{LoadedFormDraft} ) {
-                $Output .= $LayoutObject->Notify(
-                    Data => $LayoutObject->{LanguageObject}->Translate(
-                        'Article subject will be empty if the subject contains only the ticket hook!'
-                    ),
-                );
-            }
-
-            $GetParam{StandardResponse} = $GetParam{Body};
-            $Output .= $Self->_Mask(
-                TicketID   => $TicketID,
-                NextStates => $Self->_GetNextStates(
-                    %GetParam,
-                ),
-                ResponseFormat => $LayoutObject->Ascii2Html( Text => $GetParam{Body} ),
-                Errors         => \%Error,
-                Attachments    => \@Attachments,
-                GetParam       => \%GetParam,
-                TicketBackType => $TicketBackType,
-                %Ticket,
-                %GetParam,
-            );
-            $Output .= $LayoutObject->Footer(
-                Type => 'Small',
-            );
-            return $Output;
-        }
+        # send JSON response
+        return $LayoutObject->Attachment(
+            ContentType => 'application/json',
+            Content     => $JSON,
+            Type        => 'inline',
+            NoCache     => 1,
+        );
     }
 }
 
@@ -349,16 +308,10 @@ sub _Mask {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # get config for frontend module
-    my $Config             = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
-    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
 
     $LayoutObject->Block(
-        Name => $Param{TicketBackType},
-        Data => {
-
-            #            FormID => $Self->{FormID},
-            %Param,
-        },
+        Name => 'TicketBack',
     );
 
     # add rich text editor
@@ -391,44 +344,42 @@ sub _Mask {
     }
 
     my $LoadedFormDraft;
-    if ( $FormDraftID ) {
-        $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
-            FormDraftID => $FormDraftID,
-            GetContent  => 0,
-            ObjectID    => $TicketID,
-            UserID      => $Self->{UserID},
-        );
+    $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
+        FormDraftID => $Param{FormDraftID},
+        GetContent  => 0,
+        ObjectID    => $Param{TicketID},
+        UserID      => $Self->{UserID},
+    );
 
-        my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
-            TicketID => $TicketID,
-            OnlyLast => 1,
-        );
+    my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
+        TicketID => $Param{TicketID},
+        OnlyLast => 1,
+    );
 
-        if (@Articles) {
-            my $LastArticle = $Articles[0];
+    if (@Articles) {
+        my $LastArticle = $Articles[0];
 
-            my $LastArticleSystemTime;
-            if ( $LastArticle->{CreateTime} ) {
-                my $LastArticleSystemTimeObject = $Kernel::OM->Create(
-                    'Kernel::System::DateTime',
-                    ObjectParams => {
-                        String => $LastArticle->{CreateTime},
-                    },
-                );
-                $LastArticleSystemTime = $LastArticleSystemTimeObject->ToEpoch();
-            }
-
-            my $FormDraftSystemTimeObject = $Kernel::OM->Create(
+        my $LastArticleSystemTime;
+        if ( $LastArticle->{CreateTime} ) {
+            my $LastArticleSystemTimeObject = $Kernel::OM->Create(
                 'Kernel::System::DateTime',
                 ObjectParams => {
-                    String => $LoadedFormDraft->{ChangeTime},
+                    String => $LastArticle->{CreateTime},
                 },
             );
-            my $FormDraftSystemTime = $FormDraftSystemTimeObject->ToEpoch();
+            $LastArticleSystemTime = $LastArticleSystemTimeObject->ToEpoch();
+        }
 
-            if ( !$LastArticleSystemTime || $FormDraftSystemTime <= $LastArticleSystemTime ) {
-                $Param{FormDraftOutdated} = 1;
-            }
+        my $FormDraftSystemTimeObject = $Kernel::OM->Create(
+            'Kernel::System::DateTime',
+            ObjectParams => {
+                String => $LoadedFormDraft->{ChangeTime},
+            },
+        );
+        my $FormDraftSystemTime = $FormDraftSystemTimeObject->ToEpoch();
+
+        if ( !$LastArticleSystemTime || $FormDraftSystemTime <= $LastArticleSystemTime ) {
+            $Param{FormDraftOutdated} = 1;
         }
     }
 
@@ -436,13 +387,6 @@ sub _Mask {
 
         $LoadedFormDraft->{ChangeByName} = $Kernel::OM->Get('Kernel::System::User')->UserName(
             UserID => $LoadedFormDraft->{ChangeBy},
-        );
-    }
-
-    # explanatory message about asterisk
-    if ( $ConfigObject->Get('Ticket::Frontend::AsteriskExplanation') ) {
-        $LayoutObject->Block(
-            Name => 'AsteriskExplanation',
         );
     }
 
@@ -454,19 +398,19 @@ sub _Mask {
     $LayoutObject->Block(
         Name => 'ToCustomer',
         Data => {
-            ToCustomer => $Param{GetParam}{To}
+            ToCustomer => $Param{To}
         }
     );
     $LayoutObject->Block(
         Name => 'CcCustomer',
         Data => {
-            Cc => $Param{GetParam}{Cc}
+            Cc => $Param{Cc}
         }
     );
     $LayoutObject->Block(
         Name => 'BccCustomer',
         Data => {
-            Bcc => $Param{GetParam}{Bcc}
+            Bcc => $Param{Bcc}
         }
     );
 
@@ -476,7 +420,7 @@ sub _Mask {
         Data         => {
             FormID         => $Self->{FormID},
             FormDraft      => $Config->{FormDraft},
-            FormDraftID    => $FormDraftID,
+            FormDraftID    => $Param{FormDraftID},
             FormDraftTitle => $LoadedFormDraft ? $LoadedFormDraft->{Title} : '',
             FormDraftMeta  => $LoadedFormDraft,
             %Param,
@@ -595,10 +539,6 @@ sub _UpdateFormDraft {
         return unless $DraftFormObject->FormDraftUpdate(%FormDraft);
         return 1;
     }
-
-    # create new draft
-    return unless $DraftFormObject->FormDraftAdd(%FormDraft);
-    return 1;
 }
 
 1;

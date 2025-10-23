@@ -115,18 +115,21 @@
                                         </span>
                                     </a>
                                 </td>
-                                <td>
+# Rother OSS / AgentTicketFormDraftReview
                                 [% IF FormDraft.ReadWritePermission %]
+# EO AgentTicketFormDraftReview
+                                <td>
                                     <a class="FormDraftDelete"
                                         href="[% Env("CGIHandle") %]?Action=AgentTicketZoom;Subaction=FormDraftDelete;FormDraftID=[% FormDraft.FormDraftID | html %];TicketID=[% Data.TicketID %]"
                                         title="[% Translate("Delete") | html %]"
                                         data-title="[% FormDraft.Title | html %]"
                                         [% FormDraft.LinkParam %]>
-
                                         <i class="fa fa-trash-o"></i>
                                     </a>
-                                [% END %]
                                 </td>
+# Rother OSS / AgentTicketFormDraftReview
+                                [% END %]
+# EO AgentTicketFormDraftReview
                             [% END %]
                         </tbody>
                     </table>

@@ -19,7 +19,6 @@
     <input type="hidden" name="Subaction" value="FormDraftUpdate"/>
     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
     <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
-    <input type="hidden" name="FormDraftTitle" value="[% Data.FormDraftTitle | html %]"/>
     <input type="hidden" name="FormDraftID" value="[% Data.FormDraftID | html %]"/>
     <div class="LayoutPopup ARIARoleMain">
         <div class="Header">
@@ -75,13 +74,13 @@
                     <div class="Clear"></div>
 [% RenderBlockEnd("BccCustomer") %]
 
-                    <label class="Mandatory" for="Subject"><span class="Marker">*</span>[% Translate("Subject") | html %]:</label>
+                    <label for="Subject">[% Translate("Subject") | html %]:</label>
                     <div class="Field">
                         <input [% Data.ReadOnly %] type="text" name="Subject" id="Subject" value="[% Data.Subject | html %]" class="W75pc"/>
                     </div>
                     <div class="Clear"></div>
 
-                    <label class="Mandatory" for="RichText"><span class="Marker">*</span>[% Translate("Text") | html %]:</label>
+                    <label for="RichText">[% Translate("Text") | html %]:</label>
                     <div class="RichTextField">
                         <textarea id="RichText" [% Data.ReadOnly %] name="Body" rows="15" cols="[% Config("Ticket::Frontend::TextAreaEmail") %]" class="[% Data.ReadOnlyClass %] RichText">[% Data.ResponseFormat %]</textarea>
                     </div>
@@ -89,7 +88,28 @@
 
                     <label>[% Translate("Attachments") | html %]:</label>
                     <div class="Field">
-[% INCLUDE "FormElements/AttachmentListDraftEdit.tt" %]
+[% IF Data.ReadOnly %]
+                        <div class="AttachmentListContainer">
+                            <table class="Hidden Small DataTable AttachmentList">
+                                <thead>
+                                    <th class="Filename">[% Translate("Filename") | html %]</th>
+                                    <th class="Filetype">[% Translate("Type") | html %]</th>
+                                    <th class="Filesize">[% Translate("Size") | html %]</th>
+                                </thead>
+                                <tbody>
+                                [% FOREACH Attachment IN Data.AttachmentList %]
+                                    <tr>
+                                        <td class="Filename ooo12g">[% Attachment.Filename | html %]</td>
+                                        <td class="Filetype ooo12g">[% Attachment.ContentType | html %]</td>
+                                        <td class="Filesize ooo12g" data-file-size="[% Attachment.Filesize | html %]">[% Attachment.Filesize | Localize('Filesize') | html %]</td>
+                                    </tr>
+                                [% END %]
+                                </tbody>
+                            </table>
+                        </div>
+[% ELSE %]
+    [% INCLUDE "FormElements/AttachmentList.tt" %]
+[% END %]
                     </div>
                     <div class="Clear"></div>
 

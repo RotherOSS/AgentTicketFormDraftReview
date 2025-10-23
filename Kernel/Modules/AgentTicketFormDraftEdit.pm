@@ -38,11 +38,9 @@ sub new {
     my $Self = bless {%Param}, $Type;
 
     # get form id
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
-        ParamObject  => $ParamObject,
-        LayoutObject => $LayoutObject,
+        ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
+        LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
     );
 
     return $Self;
@@ -138,11 +136,11 @@ sub Run {
         );
     }
 
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID => $TicketID
-    );
-
     if ( !$Self->{Subaction} ) {
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID => $TicketID
+        );
 
         # Prepare To, Cc and Bcc from form data
         my $To  = '';
@@ -255,6 +253,7 @@ sub Run {
             Bcc            => $Bcc,
             From           => $From,
             Subject        => $FormDraft->{FormData}->{Subject},
+            FormDraft      => $FormDraft,
         );
         $Output .= $LayoutObject->Footer(
             Type => 'Small',
@@ -265,15 +264,15 @@ sub Run {
     elsif ( $Self->{Subaction} eq 'FormDraftUpdate' ) {
 
         # challenge token check for write action
-        if ( !$FormDraftID ) {
-            $LayoutObject->ChallengeTokenCheck();
-        }
+        $LayoutObject->ChallengeTokenCheck();
 
         my %FormDraftResponse;
         my $FormDraftActionOk = $Self->_UpdateFormDraft(
             UserID     => $Self->{UserID},
             ObjectType => 'Ticket',
             ObjectID   => $TicketID,
+            FormDraftID => $FormDraftID,
+            FormID      => $Self->{FormID},
         );
         if ($FormDraftActionOk) {
             $FormDraftResponse{Success} = 1;
@@ -342,15 +341,6 @@ sub _Mask {
 
         push @{ $Param{AttachmentList} }, $Attachment;
     }
-
-    my $LoadedFormDraft;
-    $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
-        FormDraftID => $Param{FormDraftID},
-        GetContent  => 0,
-        ObjectID    => $Param{TicketID},
-        UserID      => $Self->{UserID},
-    );
-
     my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
         TicketID => $Param{TicketID},
         OnlyLast => 1,
@@ -373,7 +363,7 @@ sub _Mask {
         my $FormDraftSystemTimeObject = $Kernel::OM->Create(
             'Kernel::System::DateTime',
             ObjectParams => {
-                String => $LoadedFormDraft->{ChangeTime},
+                String => $Param{FormDraft}->{ChangeTime},
             },
         );
         my $FormDraftSystemTime = $FormDraftSystemTimeObject->ToEpoch();
@@ -382,14 +372,9 @@ sub _Mask {
             $Param{FormDraftOutdated} = 1;
         }
     }
-
-    if ( IsHashRefWithData($LoadedFormDraft) ) {
-
-        $LoadedFormDraft->{ChangeByName} = $Kernel::OM->Get('Kernel::System::User')->UserName(
-            UserID => $LoadedFormDraft->{ChangeBy},
-        );
-    }
-
+    $Param{FormDraft}->{ChangeByName} = $Kernel::OM->Get('Kernel::System::User')->UserName(
+        UserID => $Param{FormDraft}->{ChangeBy},
+    );
     if ( $Self->{AccessMode} ne "rw" ) {
         $Param{ReadOnly}      = 'readonly';
         $Param{ReadOnlyClass} = 'Readonly';
@@ -419,10 +404,7 @@ sub _Mask {
         TemplateFile => 'AgentTicketFormDraftEdit',
         Data         => {
             FormID         => $Self->{FormID},
-            FormDraft      => $Config->{FormDraft},
             FormDraftID    => $Param{FormDraftID},
-            FormDraftTitle => $LoadedFormDraft ? $LoadedFormDraft->{Title} : '',
-            FormDraftMeta  => $LoadedFormDraft,
             %Param,
         },
     );
@@ -438,107 +420,42 @@ sub _UpdateFormDraft {
     my $ParamObject     = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $DraftFormObject = $Kernel::OM->Get('Kernel::System::FormDraft');
 
-    # gather necessary data for backend
-    my %MetaParams;
-    for my $Param (qw(Action FormDraftID FormDraftTitle FormID)) {
-        $MetaParams{$Param} = $ParamObject->GetParam(
-            Param => $Param,
-        );
-    }
-    return unless $MetaParams{Action};
-
     # determine session name param (SessionUseCookie = 0) for exclusion
     my $SessionName = $Kernel::OM->Get('Kernel::Config')->Get('SessionName') || 'SessionID';
 
-    # compile override list
-    my %OverrideParams = IsHashRefWithData( $Param{OverrideParams} ) ? %{ $Param{OverrideParams} } : ();
-
-    # these params must always be excluded for safety, they take precedence
-    for my $Name (
-        qw(Action ChallengeToken FormID FormDraftID FormDraftTitle FormDraftAction LoadFormDraftID),
-        $SessionName
-        )
-    {
-        $OverrideParams{$Name} = undef;
-    }
-
-    # Gather all params.
-    #   Exclude, add or override by using OverrideParams if necessary.
-    my @ParamNames = $ParamObject->GetParamNames();
-    my %ParamSeen;
-
     my $FormDraft = ($DraftFormObject)->FormDraftGet(
-        FormDraftID => $MetaParams{FormDraftID},
+        FormDraftID => $Param{FormDraftID},
         ObjectID    => $Param{ObjectID},
         UserID      => $Param{UserID},
     );
     my %FormData = $FormDraft->{FormData}->%*;
 
     PARAM:
-    for my $Param ( @ParamNames, sort keys %OverrideParams ) {
-
-        next PARAM if $ParamSeen{$Param}++;
-        my $Value;
-
-        # check for overrides first
-        if ( exists $OverrideParams{$Param} ) {
-
-            # allow only strings and array references as value
-            if (
-                IsStringWithData( $OverrideParams{$Param} )
-                || IsArrayRefWithData( $OverrideParams{$Param} )
-                )
-            {
-                $Value = $OverrideParams{$Param};
-            }
-
-            # skip all other parameters (including those specified to be excluded by using 'undef')
-            else {
-                next PARAM;
-            }
-        }
-
-        # get other values from param object
-        if ( !defined $Value ) {
-            my @Values = $ParamObject->GetArray( Param => $Param );
-            next PARAM unless IsArrayRefWithData( \@Values );
-
-            # store single occurances as string
-            if ( scalar @Values == 1 ) {
-                $Value = $Values[0];
-            }
-
-            # store multiple occurances as array reference
-            else {
-                $Value = \@Values;
-            }
-        }
-
-        $FormData{$Param} = $Value;
+    for my $Param ( qw(Subject Body) ) {
+        my @Values = $ParamObject->GetArray( Param => $Param );
+        $FormData{$Param} = $Values[0];
     }
 
     # get files from upload cache
     my @FileData = $Kernel::OM->Get('Kernel::System::Web::UploadCache')->FormIDGetAllFilesData(
-        FormID => $MetaParams{FormID},
+        FormID => $Param{FormID},
     );
 
     # prepare data to add or update draft
     my %FormDraft = (
         FormData    => \%FormData,
         FileData    => \@FileData,
-        FormDraftID => $MetaParams{FormDraftID},
+        FormDraftID => $Param{FormDraftID},
         ObjectType  => $Param{ObjectType},
         ObjectID    => $Param{ObjectID},
         Action      => $FormDraft->{Action},
-        Title       => $MetaParams{FormDraftTitle},
+        Title       => $FormDraft->{Title},
         UserID      => $Param{UserID},
     );
 
     # update draft
-    if ( $MetaParams{FormDraftID} ) {
-        return unless $DraftFormObject->FormDraftUpdate(%FormDraft);
-        return 1;
-    }
+    return unless $DraftFormObject->FormDraftUpdate(%FormDraft);
+    return 1;
 }
 
 1;

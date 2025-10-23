@@ -79,7 +79,7 @@ get draft attributes
     my $FormDraft = $FormDraftObject->FormDraftGet(
         FormDraftID    => 123,
         GetContent => 1,                # optional, default 1
-# Rother OSS / AgentTicketFormDraftReview        
+# Rother OSS / AgentTicketFormDraftReview
         ObjectID   => 123,              # though it is a security critical point, it remains optional for backward compatibility
         ObjectType => 'Ticket',         # though it is a security critical point, it remains optional for backward compatibility
 # EO AgentTicketFormDraftReview
@@ -201,6 +201,7 @@ sub FormDraftGet {
             ChangeTime  => $Row[7],
             ChangeBy    => $Row[8],
         );
+
 # Rother OSS / AgentTicketFormDraftReview
         # if no $Param{ObjectType} is provided, there is no validation
         # this validation is important but is kept optional for backward compatibility
@@ -211,6 +212,7 @@ sub FormDraftGet {
             );
             return;
         }
+
         # if no $Param{ObjectID} is provided, there is no validation
         # this validation is important but is kept optional for backward compatibility
         if ( $Param{ObjectID} && $FormDraft{ObjectID} != $Param{ObjectID} ) {
@@ -437,6 +439,7 @@ sub FormDraftUpdate {
     VALIDATEPARAM:
     for my $ValidateParam (qw(ObjectType ObjectID Action)) {
         next VALIDATEPARAM if $Param{$ValidateParam} eq $FormDraft->{$ValidateParam};
+
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  =>

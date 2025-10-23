@@ -948,7 +948,6 @@ sub MaskAgentZoom {
     # 1) if the $Page > 1, we need pagination
     # 2) if not, request $Limit + 1 articles. If $Limit + 1 are actually
     #    returned, pagination is necessary
-    my $Extra = $Page > 1 ? 0 : 1;
     my $NeedPagination;
 
     my @ArticleBox = $Self->_ArticleBoxGet(
@@ -1399,9 +1398,8 @@ sub MaskAgentZoom {
 #    # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
 # get user authorization level (owner, responsible, rw, ro)
     my $UserPermission = $Self->_GetUserPermissionLevel();
-
-    # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
 # EO AgentTicketFormDraftReview
+    # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
     my %ActionConfig = (
         AgentTicketCompose => {
             Link           => 'Action=AgentTicketCompose;TicketID=[% Data.TicketID | uri %]',
@@ -1450,7 +1448,7 @@ sub MaskAgentZoom {
         $ActionLookup{$Action} = $ActionConfig{$Action};
     }
 
-# Get and show available FormDrafts.
+    # Get and show available FormDrafts.
     my %ShownFormDraftEntries;
     my $FormDraftList = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftListGet(
         ObjectType => 'Ticket',
@@ -1539,12 +1537,7 @@ sub MaskAgentZoom {
                     %{$ActionData},
 
                 };
-                $ShownFormDraftActionEntry->{ReadWritePermission} = $TicketObject->TicketPermission(
-                    Type     => "rw",
-                    TicketID => $ShownFormDraftActionEntry->{ObjectID},
-                    UserID   => $Self->{UserID},
-                    LogNo    => 1,
-                );
+
                 push @FormDrafts, $ShownFormDraftActionEntry;
             }
         }
@@ -1614,6 +1607,7 @@ sub MaskAgentZoom {
     elsif ( IsHashRefWithData( $WidgetData{WidgetDynamicField} ) ) {
         DFVALUE:
         for my $FieldName ( keys $WidgetData{WidgetDynamicField}->%* ) {
+            next DFVALUE unless $WidgetData{WidgetDynamicField}{$FieldName};
             next DFVALUE unless $Ticket{"DynamicField_$FieldName"};
 
             $ShowWidget = 1;
@@ -2360,11 +2354,10 @@ sub MaskAgentZoom {
 sub _ArticleTree {
     my ( $Self, %Param ) = @_;
 
-    my %Ticket          = %{ $Param{Ticket} };
-    my %ArticleFlags    = %{ $Param{ArticleFlags} };
-    my @ArticleBox      = @{ $Param{ArticleBox} };
-    my $ArticleMaxLimit = $Param{ArticleMaxLimit};
-    my $ArticleID       = $Param{ArticleID};
+    my %Ticket       = %{ $Param{Ticket} };
+    my %ArticleFlags = %{ $Param{ArticleFlags} };
+    my @ArticleBox   = @{ $Param{ArticleBox} };
+    my $ArticleID    = $Param{ArticleID};
     my $TableClasses;
 
     # get layout object
@@ -2848,12 +2841,6 @@ sub _ArticleTree {
             ChatExternal
         );
 
-        my @TypesLeft = (
-            @TypesOutgoing,
-            @TypesInternal,
-            @TypesTicketAutoAction,
-        );
-
         my @TypesRight = (
             @TypesIncoming,
             @TypesTicketAction,
@@ -3282,13 +3269,10 @@ sub _ArticleItemSeen {
 sub _ArticleItem {
     my ( $Self, %Param ) = @_;
 
-    my %Ticket    = %{ $Param{Ticket} };
-    my %Article   = %{ $Param{Article} };
-    my %AclAction = %{ $Param{AclAction} };
+    my %Ticket  = %{ $Param{Ticket} };
+    my %Article = %{ $Param{Article} };
 
-    my $TicketObject  = $Kernel::OM->Get('Kernel::System::Ticket');
-    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # show article actions
     my @MenuItems = $LayoutObject->ArticleActions(

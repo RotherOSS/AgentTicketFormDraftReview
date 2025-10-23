@@ -268,9 +268,9 @@ sub Run {
 
         my %FormDraftResponse;
         my $FormDraftActionOk = $Self->_UpdateFormDraft(
-            UserID     => $Self->{UserID},
-            ObjectType => 'Ticket',
-            ObjectID   => $TicketID,
+            UserID      => $Self->{UserID},
+            ObjectType  => 'Ticket',
+            ObjectID    => $TicketID,
             FormDraftID => $FormDraftID,
             FormID      => $Self->{FormID},
         );
@@ -403,8 +403,8 @@ sub _Mask {
     return $LayoutObject->Output(
         TemplateFile => 'AgentTicketFormDraftEdit',
         Data         => {
-            FormID         => $Self->{FormID},
-            FormDraftID    => $Param{FormDraftID},
+            FormID      => $Self->{FormID},
+            FormDraftID => $Param{FormDraftID},
             %Param,
         },
     );
@@ -431,7 +431,7 @@ sub _UpdateFormDraft {
     my %FormData = $FormDraft->{FormData}->%*;
 
     PARAM:
-    for my $Param ( qw(Subject Body) ) {
+    for my $Param (qw(Subject Body)) {
         my @Values = $ParamObject->GetArray( Param => $Param );
         $FormData{$Param} = $Values[0];
     }

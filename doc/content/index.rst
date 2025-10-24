@@ -45,7 +45,35 @@ Not applicable
 
 Configuration Reference
 -----------------------
-Not applicable
+
+Frontend::Agent::ModuleRegistration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Frontend::Module###AgentTicketFormDraftEdit
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Frontend module registration for the agent interface.
+
+Frontend::Agent::ModuleRegistration::Loader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Loader::Module::AgentTicketFormDraftEdit###002-Ticket
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Loader module registration for the agent interface.
+
+Frontend::Agent::View::TicketCompose
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ticket::Frontend::AgentTicketFormDraftEdit###Permission
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Required permissions to use the draft edit screen in the agent interface.
+
+Ticket::Frontend::AgentTicketFormDraftEdit###RichTextHeight
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Defines the initial height in pixels for the rich text editor component for this screen.
+
+Ticket::Frontend::AgentTicketFormDraftEdit###RichTextWidth
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Defines the width for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).
 
 About
 =======

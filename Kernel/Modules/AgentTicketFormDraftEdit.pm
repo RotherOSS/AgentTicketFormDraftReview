@@ -43,6 +43,9 @@ sub new {
         LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
     );
 
+    $Self->{AccessRo} = $Param{AccessRo};
+    $Self->{AccessRw} = $Param{AccessRw};
+
     return $Self;
 }
 
@@ -71,8 +74,24 @@ sub Run {
     my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
 
     # check permissions
+    # first check at frontend level and then at ticket level
+    # frontend permissions overwrite ticket level permissions
+    my @AllowedAccessModes;
+    if ( $Self->{AccessRw} ) {
+        @AllowedAccessModes = qw(rw ro);
+    }
+    elsif ( $Self->{AccessRo} ) {
+        @AllowedAccessModes = qw(ro);
+    }
+    else {
+        # error screen, there is no frontend permission to this module
+        return $LayoutObject->NoPermission(
+            Message    => $LayoutObject->{LanguageObject}->Translate('You have no permissions!'),
+            WithHeader => 'yes',
+        );
+    }
     ACCESS:
-    for my $AccessType (qw(rw ro)) {
+    for my $AccessType (@AllowedAccessModes) {
         if (
             $TicketObject->TicketPermission(
                 Type     => $AccessType,

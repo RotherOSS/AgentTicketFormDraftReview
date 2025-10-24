@@ -1465,6 +1465,7 @@ sub MaskAgentZoom {
         for my $FormDraft ( @{$FormDraftList} ) {
 # Rother OSS / AgentTicketFormDraftReview
             if ( $FormDraft->{Action} =~ /^AgentTicketCompose|AgentTicketForward$/ ) {
+                next FormDraft if !$UserPermission;
                 if ($TicketIsLocked) {
                     if ( $UserPermission =~ /^r[ow]$/ ) {
                         $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
@@ -1537,7 +1538,9 @@ sub MaskAgentZoom {
                     %{$ActionData},
 
                 };
-
+# Rother OSS / AgentTicketFormDraftReview
+                $ShownFormDraftActionEntry->{ReadWritePermission} = $UserPermission ne "ro";
+# EO AgentTicketFormDraftReview
                 push @FormDrafts, $ShownFormDraftActionEntry;
             }
         }
@@ -3487,32 +3490,104 @@ sub _GetIncludedFieldOrdered {
 sub _GetUserPermissionLevel() {
     my ( $Self, %Param ) = @_;
 
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    #check if user is the owner
+    # check module registry
+    my $ModuleReg = $ConfigObject->Get('Frontend::Module')->{AgentTicketFormDraftEdit} ;
+
+    # no permission if module is not registered
+    return if !$ModuleReg;
+
+    # module permission check for action
+    my %AccessFlag;
     if (
-        $TicketObject->OwnerCheck(
-            TicketID => $Self->{TicketID},
-            OwnerID  => $Self->{UserID},
-        )
+        ref $ModuleReg->{GroupRo} eq 'ARRAY'
+        && !scalar @{ $ModuleReg->{GroupRo} }
+        && ref $ModuleReg->{Group} eq 'ARRAY'
+        && !scalar @{ $ModuleReg->{Group} }
         )
     {
-        return 'owner';
+        $AccessFlag{AccessRo} = 1;
+        $AccessFlag{AccessRw} = 1;
+    }
+    else {
+        my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+
+        PERMISSION:
+        for my $Permission (qw(GroupRo Group)) {
+            my $AccessOk = 0;
+            my $Group    = $ModuleReg->{$Permission};
+            next PERMISSION if !$Group;
+            if ( ref $Group eq 'ARRAY' ) {
+                INNER:
+                for my $GroupName ( @{$Group} ) {
+                    next INNER if !$GroupName;
+                    next INNER if !$GroupObject->PermissionCheck(
+                        UserID    => $Self->{UserID},
+                        GroupName => $GroupName,
+                        Type      => $Permission eq 'GroupRo' ? 'ro' : 'rw',
+
+                    );
+                    $AccessOk = 1;
+                    last INNER;
+                }
+            }
+            else {
+                my $HasPermission = $GroupObject->PermissionCheck(
+                    UserID    => $Self->{UserID},
+                    GroupName => $Group,
+                    Type      => $Permission eq 'GroupRo' ? 'ro' : 'rw',
+
+                );
+                if ($HasPermission) {
+                    $AccessOk = 1;
+                }
+            }
+            if ( $Permission eq 'Group' && $AccessOk ) {
+                $AccessFlag{AccessRo} = 1;
+                $AccessFlag{AccessRw} = 1;
+            }
+            elsif ( $Permission eq 'GroupRo' && $AccessOk ) {
+                $AccessFlag{AccessRo} = 1;
+            }
+        }
+
+        # module requires at least the basic ro permission, otherwise do not grant access
+        return if !$AccessFlag{AccessRo} && !$AccessFlag{AccessRw} || !$AccessFlag{AccessRo} && $AccessFlag{AccessRw};
     }
 
-    # else check for user ro/rw permissions
-    if (
-        $TicketObject->TicketPermission(
-            Type     => "rw",
-            TicketID => $Self->{TicketID},
-            UserID   => $Self->{UserID},
-            LogNo    => 1,
-        )
-        )
-    {
-        return "rw";
+    # if AccessRw is true, then check access at ticket level
+    if ( $AccessFlag{AccessRw} ) {
+        my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+        #check if user is the owner
+        if (
+            $TicketObject->OwnerCheck(
+                TicketID => $Self->{TicketID},
+                OwnerID  => $Self->{UserID},
+            )
+            )
+        {
+            return 'owner';
+        }
+
+        # else check for user ro/rw permissions
+        if (
+            $TicketObject->TicketPermission(
+                Type     => "rw",
+                TicketID => $Self->{TicketID},
+                UserID   => $Self->{UserID},
+                LogNo    => 1,
+            )
+            )
+        {
+            return "rw";
+        }
     }
 
+    # at this point:
+    # AccessRw is false but AccessRo is true or 
+    # AccessRw is true but ticket has only ro permission
     return "ro";
 }
 # EO AgentTicketFormDraftReview

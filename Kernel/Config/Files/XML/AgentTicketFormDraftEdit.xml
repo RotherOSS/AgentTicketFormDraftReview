@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AgentTicketFormDraftEdit" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Ticket Compose email Answer.</Item>
+                    <Item Key="Title" Translatable="1">Draft Edit</Item>
+                    <Item Key="NavBarName">Ticket</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentTicketFormDraftEdit###002-Ticket" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>QuickDateButtons.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.CustomerSearch.js</Item>
+                        <Item>Core.Agent.CustomerSearchAutoComplete.js</Item>
+                        <Item>Core.Agent.TicketAction.js</Item>
+                        <Item>Core.Agent.TicketCompose.js</Item>
+                        <Item>Core.Agent.TicketFormDraft.js</Item>
+                        <Item>QuickDateButtons.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketFormDraftEdit###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the draft edit screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketCompose</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="" Translatable="1">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketFormDraftEdit###RichTextWidth" Required="0" Valid="1">
+        <Description Translatable="1">Defines the width for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).</Description>
+        <Navigation>Frontend::Agent::View::TicketCompose</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+%?$">620</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketFormDraftEdit###RichTextHeight" Required="0" Valid="1">
+        <Description Translatable="1">Defines the initial height in pixels for the rich text editor component for this screen.</Description>
+        <Navigation>Frontend::Agent::View::TicketCompose</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+(\.\d+)?$">320</Item>
+        </Value>
+    </Setting>    
+</otobo_config>

@@ -3490,6 +3490,19 @@ sub _GetIncludedFieldOrdered {
 sub _GetUserPermissionLevel() {
     my ( $Self, %Param ) = @_;
 
+    #check if user is the owner
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    if (
+        $TicketObject->OwnerCheck(
+            TicketID => $Self->{TicketID},
+            OwnerID  => $Self->{UserID},
+        )
+        )
+    {
+        return 'owner';
+    }
+
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # check module registry
@@ -3558,20 +3571,6 @@ sub _GetUserPermissionLevel() {
 
     # if AccessRw is true, then check access at ticket level
     if ( $AccessFlag{AccessRw} ) {
-        my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-        #check if user is the owner
-        if (
-            $TicketObject->OwnerCheck(
-                TicketID => $Self->{TicketID},
-                OwnerID  => $Self->{UserID},
-            )
-            )
-        {
-            return 'owner';
-        }
-
-        # else check for user ro/rw permissions
         if (
             $TicketObject->TicketPermission(
                 Type     => "rw",

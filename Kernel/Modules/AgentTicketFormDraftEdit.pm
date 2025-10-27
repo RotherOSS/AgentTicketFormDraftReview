@@ -264,14 +264,12 @@ sub Run {
 
         $Output .= $Self->_Mask(
             TicketID       => $TicketID,
-            ResponseFormat => $FormDraft->{FormData}->{Body},
             Attachments    => \@Attachments,
             FormDraftID    => $FormDraftID,
             To             => $To,
             Cc             => $Cc,
             Bcc            => $Bcc,
             From           => $From,
-            Subject        => $FormDraft->{FormData}->{Subject},
             FormDraft      => $FormDraft,
         );
         $Output .= $LayoutObject->Footer(
@@ -292,6 +290,7 @@ sub Run {
             ObjectID    => $TicketID,
             FormDraftID => $FormDraftID,
             FormID      => $Self->{FormID},
+            FormDraft   => $FormDraft,
         );
         if ($FormDraftActionOk) {
             $FormDraftResponse{Success} = 1;
@@ -424,6 +423,8 @@ sub _Mask {
         Data         => {
             FormID      => $Self->{FormID},
             FormDraftID => $Param{FormDraftID},
+            ResponseFormat => $Param{FormDraft}->{FormData}->{Body},
+            Subject        => $Param{FormDraft}->{FormData}->{Subject},
             %Param,
         },
     );
@@ -435,23 +436,12 @@ sub _UpdateFormDraft {
     # check params
     return if !$Param{UserID} || !$Param{ObjectType} || !IsInteger( $Param{ObjectID} );
 
-    # create necessary objects
-    my $ParamObject     = $Kernel::OM->Get('Kernel::System::Web::Request');
-    my $DraftFormObject = $Kernel::OM->Get('Kernel::System::FormDraft');
-
-    # determine session name param (SessionUseCookie = 0) for exclusion
-    my $SessionName = $Kernel::OM->Get('Kernel::Config')->Get('SessionName') || 'SessionID';
-
-    my $FormDraft = ($DraftFormObject)->FormDraftGet(
-        FormDraftID => $Param{FormDraftID},
-        ObjectID    => $Param{ObjectID},
-        UserID      => $Param{UserID},
-    );
+    my $FormDraft = $Param{FormDraft};
     my %FormData = $FormDraft->{FormData}->%*;
 
     PARAM:
     for my $Param (qw(Subject Body)) {
-        my @Values = $ParamObject->GetArray( Param => $Param );
+        my @Values = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => $Param );
         $FormData{$Param} = $Values[0];
     }
 
@@ -473,8 +463,7 @@ sub _UpdateFormDraft {
     );
 
     # update draft
-    return unless $DraftFormObject->FormDraftUpdate(%FormDraft);
-    return 1;
+    return $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftUpdate(%FormDraft);
 }
 
 1;

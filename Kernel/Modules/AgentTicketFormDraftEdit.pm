@@ -263,14 +263,14 @@ sub Run {
         );
 
         $Output .= $Self->_Mask(
-            TicketID       => $TicketID,
-            Attachments    => \@Attachments,
-            FormDraftID    => $FormDraftID,
-            To             => $To,
-            Cc             => $Cc,
-            Bcc            => $Bcc,
-            From           => $From,
-            FormDraft      => $FormDraft,
+            TicketID    => $TicketID,
+            Attachments => \@Attachments,
+            FormDraftID => $FormDraftID,
+            To          => $To,
+            Cc          => $Cc,
+            Bcc         => $Bcc,
+            From        => $From,
+            FormDraft   => $FormDraft,
         );
         $Output .= $LayoutObject->Footer(
             Type => 'Small',
@@ -421,8 +421,8 @@ sub _Mask {
     return $LayoutObject->Output(
         TemplateFile => 'AgentTicketFormDraftEdit',
         Data         => {
-            FormID      => $Self->{FormID},
-            FormDraftID => $Param{FormDraftID},
+            FormID         => $Self->{FormID},
+            FormDraftID    => $Param{FormDraftID},
             ResponseFormat => $Param{FormDraft}->{FormData}->{Body},
             Subject        => $Param{FormDraft}->{FormData}->{Subject},
             %Param,
@@ -437,7 +437,7 @@ sub _UpdateFormDraft {
     return if !$Param{UserID} || !$Param{ObjectType} || !IsInteger( $Param{ObjectID} );
 
     my $FormDraft = $Param{FormDraft};
-    my %FormData = $FormDraft->{FormData}->%*;
+    my %FormData  = $FormDraft->{FormData}->%*;
 
     PARAM:
     for my $Param (qw(Subject Body)) {

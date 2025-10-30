@@ -436,13 +436,13 @@ sub _UpdateFormDraft {
     # check params
     return if !$Param{UserID} || !$Param{ObjectType} || !IsInteger( $Param{ObjectID} );
 
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
     my $FormDraft = $Param{FormDraft};
     my %FormData  = $FormDraft->{FormData}->%*;
 
-    PARAM:
     for my $Param (qw(Subject Body)) {
-        my @Values = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => $Param );
-        $FormData{$Param} = $Values[0];
+        $FormData{$Param} = $ParamObject->GetParam( Param => $Param );
     }
 
     # get files from upload cache

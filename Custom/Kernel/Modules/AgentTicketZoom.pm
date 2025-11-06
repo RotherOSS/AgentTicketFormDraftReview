@@ -1394,10 +1394,12 @@ sub MaskAgentZoom {
             };
         }
     }
+
 # Rother OSS / AgentTicketFormDraftReview
 #    # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
-# get user authorization level (owner, responsible, rw, ro)
+    # get user authorization level (owner, responsible, rw, ro)
     my $UserPermission = $Self->_GetUserPermissionLevel();
+
 # EO AgentTicketFormDraftReview
     # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
     my %ActionConfig = (
@@ -1417,6 +1419,7 @@ sub MaskAgentZoom {
             Name           => Translatable('Forward'),
             TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Forward'),
         },
+
 # Rother OSS / AgentTicketFormDraftReview
         AgentTicketFormDraftEdit => {
             Link           => 'Action=AgentTicketFormDraftEdit;TicketID=[% Data.TicketID | uri %]',
@@ -1426,12 +1429,25 @@ sub MaskAgentZoom {
             Name           => Translatable('Reply'),
             TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Reply'),
         },
-# EO AgentTicketFormDraftReview
     );
+    if ( !$ActionLookup{AgentTicketEmailOutbound} ) {
+        $ActionConfig{AgentTicketEmailOutbound} = {
+            Link           => 'Action=AgentTicketFormDraftEdit;TicketID=[% Data.TicketID | html %]',
+            Class          => 'AsPopup PopupType_TicketAction',
+            LinkParam      => '',
+            Description    => 'Send new outgoing mail from this ticket',
+            Name           => 'E-Mail Outbound',
+            TranslatedName => 'E-Mail Outbound'
+        };
+    }
+
+# EO AgentTicketFormDraftReview
     ACTION:
+
 # Rother OSS / AgentTicketFormDraftReview
-#    for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
-    for my $Action (qw(AgentTicketCompose AgentTicketForward AgentTicketFormDraftEdit)) {
+    #    for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
+    for my $Action (qw(AgentTicketCompose AgentTicketForward AgentTicketFormDraftEdit AgentTicketEmailOutbound)) {
+        next ACTION if !$ActionConfig{$Action};
 # EO AgentTicketFormDraftReview
         next ACTION if !$ConfigObject->Get('Frontend::Module')->{$Action};
         next ACTION if !$AclActionLookup{$Action};
@@ -1538,6 +1554,7 @@ sub MaskAgentZoom {
                     %{$ActionData},
 
                 };
+
 # Rother OSS / AgentTicketFormDraftReview
                 $ShownFormDraftActionEntry->{ReadWritePermission} = $UserPermission ne "ro";
 # EO AgentTicketFormDraftReview
@@ -3486,6 +3503,7 @@ sub _GetIncludedFieldOrdered {
 
     return @Return;
 }
+
 # Rother OSS / AgentTicketFormDraftReview
 sub _GetUserPermissionLevel() {
     my ( $Self, %Param ) = @_;
@@ -3506,7 +3524,7 @@ sub _GetUserPermissionLevel() {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # check module registry
-    my $ModuleReg = $ConfigObject->Get('Frontend::Module')->{AgentTicketFormDraftEdit} ;
+    my $ModuleReg = $ConfigObject->Get('Frontend::Module')->{AgentTicketFormDraftEdit};
 
     # no permission if module is not registered
     return if !$ModuleReg;
@@ -3585,7 +3603,7 @@ sub _GetUserPermissionLevel() {
     }
 
     # at this point:
-    # AccessRw is false but AccessRo is true or 
+    # AccessRw is false but AccessRo is true or
     # AccessRw is true but ticket has only ro permission
     return "ro";
 }

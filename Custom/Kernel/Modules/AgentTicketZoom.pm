@@ -1395,12 +1395,6 @@ sub MaskAgentZoom {
         }
     }
 
-# Rother OSS / AgentTicketFormDraftReview
-#    # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
-    # get user authorization level (owner, responsible, rw, ro)
-    my $UserPermission = $Self->_GetUserPermissionLevel();
-
-# EO AgentTicketFormDraftReview
     # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
     my %ActionConfig = (
         AgentTicketCompose => {
@@ -1419,35 +1413,23 @@ sub MaskAgentZoom {
             Name           => Translatable('Forward'),
             TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Forward'),
         },
-
 # Rother OSS / AgentTicketFormDraftReview
         AgentTicketFormDraftEdit => {
             Link           => 'Action=AgentTicketFormDraftEdit;TicketID=[% Data.TicketID | uri %]',
             Class          => 'AsPopup PopupType_TicketAction',
             LinkParam      => '',
-            Description    => Translatable('Reply'),
-            Name           => Translatable('Reply'),
-            TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Reply'),
+            Description    => Translatable('Edit draft'),
+            Name           => Translatable('Edit'),
+            TranslatedName => $Kernel::OM->Get('Kernel::Language')->Translate('Edit'),
         },
-    );
-    if ( !$ActionLookup{AgentTicketEmailOutbound} ) {
-        $ActionConfig{AgentTicketEmailOutbound} = {
-            Link           => 'Action=AgentTicketFormDraftEdit;TicketID=[% Data.TicketID | html %]',
-            Class          => 'AsPopup PopupType_TicketAction',
-            LinkParam      => '',
-            Description    => 'Send new outgoing mail from this ticket',
-            Name           => 'E-Mail Outbound',
-            TranslatedName => 'E-Mail Outbound'
-        };
-    }
-
 # EO AgentTicketFormDraftReview
-    ACTION:
+    );
 
 # Rother OSS / AgentTicketFormDraftReview
-    #    for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
-    for my $Action (qw(AgentTicketCompose AgentTicketForward AgentTicketFormDraftEdit AgentTicketEmailOutbound)) {
-        next ACTION if !$ActionConfig{$Action};
+#    ACTION:
+#    for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
+    ACTION:
+    for my $Action (qw(AgentTicketCompose AgentTicketForward AgentTicketFormDraftEdit)) {
 # EO AgentTicketFormDraftReview
         next ACTION if !$ConfigObject->Get('Frontend::Module')->{$Action};
         next ACTION if !$AclActionLookup{$Action};
@@ -1471,28 +1453,41 @@ sub MaskAgentZoom {
         ObjectID   => $Self->{TicketID},
         UserID     => $Self->{UserID},
     );
+
 # Rother OSS / AgentTicketFormDraftReview
+    # get user authorization level (owner, rw, ro)
+    my $UserPermission = $Self->_GetUserPermissionLevel();
     my $TicketIsLocked = $TicketObject->TicketLockGet(
         TicketID => $Self->{TicketID}
     );
+
+    # on locked tickets only the owner can fully access compose and forward form drafts
+    if ( $TicketIsLocked && $UserPermission ne 'owner' ) {
+        delete $ActionLookup{AgentTicketCompose};
+        delete $ActionLookup{AgentTicketForward};
+    }
+
+    elsif ( $UserPermission eq 'ro' ) {
+        $ActionLookup{AgentTicketFormDraftEdit}{Description}    = Translatable('View draft'),
+        $ActionLookup{AgentTicketFormDraftEdit}{Name}           = Translatable('View'),
+        $ActionLookup{AgentTicketFormDraftEdit}{TranslatedName} = $Kernel::OM->Get('Kernel::Language')->Translate('View'),
+    }
 # EO AgentTicketFormDraftReview
+
     if ( IsArrayRefWithData($FormDraftList) ) {
         FormDraft:
         for my $FormDraft ( @{$FormDraftList} ) {
 # Rother OSS / AgentTicketFormDraftReview
-            if ( $FormDraft->{Action} =~ /^AgentTicketCompose|AgentTicketForward$/ ) {
-                next FormDraft if !$UserPermission;
-                if ($TicketIsLocked) {
-                    if ( $UserPermission =~ /^r[ow]$/ ) {
-                        $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
-                    }
-                }
-                elsif ( $UserPermission eq 'ro' ) {
-                    $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
-                }
+#            next FormDraft if !$ActionLookup{ $FormDraft->{Action} };
+            if ( !$ActionLookup{ $FormDraft->{Action} } ) {
+
+                # if we cannot directly access the action, alternatively load the draft via FormDraftEdit if available
+                next FormDraft if !$ActionLookup{AgentTicketFormDraftEdit};
+
+                $FormDraft->{Action} = 'AgentTicketFormDraftEdit';
             }
 # EO AgentTicketFormDraftReview
-            next FormDraft if !$ActionLookup{ $FormDraft->{Action} };
+
             push @{ $ShownFormDraftEntries{ $FormDraft->{Action} } }, $FormDraft;
         }
     }

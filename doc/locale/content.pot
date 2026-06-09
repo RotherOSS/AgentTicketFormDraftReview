@@ -1,0 +1,167 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019–2026 Rother OSS GmbH, https://otobo.io
+# This file is distributed under the same license as the OTOBO Documentation package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: OTOBO Documentation dev\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-09 12:24+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../content/index.rst:5
+msgid "Contents"
+msgstr ""
+
+#: ../content/index.rst:10
+msgid "Overview"
+msgstr ""
+
+#: ../content/index.rst:12
+msgid "Summary"
+msgstr ""
+
+#: ../content/index.rst:13
+msgid "This package enables users to view ticket drafts if they have read permissions, and to edit ticket drafts if they have write permissions."
+msgstr ""
+
+#: ../content/index.rst:16
+msgid "Configuration"
+msgstr ""
+
+#: ../content/index.rst:19
+msgid "System requirements"
+msgstr ""
+
+#: ../content/index.rst:22
+msgid "Framework"
+msgstr ""
+
+#: ../content/index.rst:23
+msgid "OTOBO 11.0.x"
+msgstr ""
+
+#: ../content/index.rst:26
+msgid "Packages"
+msgstr ""
+
+#: ../content/index.rst:27
+#: ../content/index.rst:31
+msgid "\\-"
+msgstr ""
+
+#: ../content/index.rst:30
+msgid "Third-party software"
+msgstr ""
+
+#: ../content/index.rst:34
+msgid "Basic Usage"
+msgstr ""
+
+#: ../content/index.rst:35
+msgid "After zooming into a ticket, select a draft from the draft list in the top-right area (see Figure 2.1). If you have read permissions, the draft opens in a view-only window. If you have write permissions, the draft opens in an editable window."
+msgstr ""
+
+#: ../content/index.rst:37
+#: ../content/index.rst:41
+msgid "Click on the window top-right link to view or edit a draft."
+msgstr ""
+
+#: ../content/index.rst:44
+msgid "Custom Configuration and Advanced Features"
+msgstr ""
+
+#: ../content/index.rst:45
+msgid "Not applicable"
+msgstr ""
+
+#: ../content/index.rst:48
+msgid "Configuration Reference"
+msgstr ""
+
+#: ../content/index.rst:51
+msgid "Frontend::Agent::ModuleRegistration"
+msgstr ""
+
+#: ../content/index.rst:54
+msgid "Frontend::Module###AgentTicketFormDraftEdit"
+msgstr ""
+
+#: ../content/index.rst:55
+msgid "Frontend module registration for the agent interface."
+msgstr ""
+
+#: ../content/index.rst:58
+msgid "Frontend::Agent::ModuleRegistration::Loader"
+msgstr ""
+
+#: ../content/index.rst:61
+msgid "Loader::Module::AgentTicketFormDraftEdit###002-Ticket"
+msgstr ""
+
+#: ../content/index.rst:62
+msgid "Loader module registration for the agent interface."
+msgstr ""
+
+#: ../content/index.rst:65
+msgid "Frontend::Agent::View::TicketCompose"
+msgstr ""
+
+#: ../content/index.rst:68
+msgid "Ticket::Frontend::AgentTicketFormDraftEdit###Permission"
+msgstr ""
+
+#: ../content/index.rst:69
+msgid "Required permissions to use the draft edit screen in the agent interface."
+msgstr ""
+
+#: ../content/index.rst:72
+msgid "Ticket::Frontend::AgentTicketFormDraftEdit###RichTextHeight"
+msgstr ""
+
+#: ../content/index.rst:73
+msgid "Defines the initial height in pixels for the rich text editor component for this screen."
+msgstr ""
+
+#: ../content/index.rst:76
+msgid "Ticket::Frontend::AgentTicketFormDraftEdit###RichTextWidth"
+msgstr ""
+
+#: ../content/index.rst:77
+msgid "Defines the width for the rich text editor component for this screen. Enter number (pixels) or percent value (relative)."
+msgstr ""
+
+#: ../content/index.rst:80
+msgid "About"
+msgstr ""
+
+#: ../content/index.rst:83
+msgid "Contact"
+msgstr ""
+
+#: ../content/index.rst:84
+msgid "Rother OSS GmbH"
+msgstr ""
+
+#: ../content/index.rst:85
+msgid "Email: hello@otobo.io"
+msgstr ""
+
+#: ../content/index.rst:86
+msgid "Web: https://otobo.io"
+msgstr ""
+
+#: ../content/index.rst:89
+msgid "Version"
+msgstr ""
+
+#: ../content/index.rst:90
+msgid "Author: |doc-vendor| / Version: |doc-version| / Date of release: |doc-datestamp|"
+msgstr ""

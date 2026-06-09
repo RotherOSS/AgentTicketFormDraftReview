@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo - ca50d9ee774bfd53701b6cca5d903ea4a2491f19 - Kernel/Modules/AgentTicketZoom.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1395,7 +1397,10 @@ sub MaskAgentZoom {
         }
     }
 
+# Rother OSS / AgentTicketFormDraftReview
+#     # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
     # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
+# EO AgentTicketFormDraftReview
     my %ActionConfig = (
         AgentTicketCompose => {
             Link           => 'Action=AgentTicketCompose;TicketID=[% Data.TicketID | uri %]',
@@ -1669,7 +1674,14 @@ sub MaskAgentZoom {
 
             # get next activity dialogs
             if ( $Ticket{$ActivityEntityIDField} ) {
-                $NextActivityDialogs = ${ActivityData}->{ActivityDialog} || {};
+
+                # protection against autovification
+                if ( IsHashRefWithData($ActivityData) && IsHashRefWithData( $ActivityData->{ActivityDialog} ) ) {
+                    $NextActivityDialogs = ${ActivityData}->{ActivityDialog};
+                }
+                else {
+                    $NextActivityDialogs = {};
+                }
             }
             $ActivityName = $ActivityData->{Name};
         }
@@ -1880,6 +1892,20 @@ sub MaskAgentZoom {
 
                         my $DFConfig = $DynamicFieldLookup{ $Field->{Name} };
 
+                        # if we are dealing with a lens field pointing to a Set, get the config of the Set
+                        if ( $DFConfig->{FieldType} eq 'Lens' ) {
+                            my $AttributeDF = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+                                ID => $DFConfig->{Config}{AttributeDF},
+                            );
+                            if ( $AttributeDF->{FieldType} eq 'Set' ) {
+                                $DFConfig = {
+                                    $AttributeDF->%*,
+                                    Name  => $DFConfig->{Name},
+                                    Label => $DFConfig->{Label},
+                                };
+                            }
+                        }
+
                         # set field
                         if ( $DFConfig->{FieldType} eq 'Set' ) {
                             $LayoutObject->Block(
@@ -2068,6 +2094,20 @@ sub MaskAgentZoom {
             );
 
             my ($DFConfig) = grep { $_->{Name} eq $Field->{Name} } $DynamicField->@*;
+
+            # if we are dealing with a lens field pointing to a Set, get the config of the Set
+            if ( $DFConfig->{FieldType} eq 'Lens' ) {
+                my $AttributeDF = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+                    ID => $DFConfig->{Config}{AttributeDF},
+                );
+                if ( $AttributeDF->{FieldType} eq 'Set' ) {
+                    $DFConfig = {
+                        $AttributeDF->%*,
+                        Name  => $DFConfig->{Name},
+                        Label => $DFConfig->{Label},
+                    };
+                }
+            }
 
             # set field
             if ( $DFConfig->{FieldType} eq 'Set' ) {
@@ -2492,6 +2532,25 @@ sub _ArticleTree {
             },
         );
 
+        # fetching accounted times of all articles to check if we display the column
+        my %ArticleAccountedTimes;
+        my $ShowTimeUnits = 0;
+        if ( $Self->{Config}{ArticleListShowTimeUnits} ) {
+            for my $ArticleTmp (@ArticleBox) {
+
+                # Get accounted time for article using ArticleAccountedTimeGet
+                $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} } = $ArticleObject->ArticleAccountedTimeGet(
+                    ArticleID => $ArticleTmp->{ArticleID},
+                );
+            }
+            $ShowTimeUnits = ( any { $_ != 0 } values %ArticleAccountedTimes ) ? 1 : 0;
+            if ($ShowTimeUnits) {
+                $LayoutObject->Block(
+                    Name => 'TimeUnitHeader',
+                );
+            }
+        }
+
         ARTICLE:
         for my $ArticleTmp (@ArticleBox) {
             my %Article = %$ArticleTmp;
@@ -2576,6 +2635,17 @@ sub _ArticleTree {
                 ShowDeletedArticles => $Self->{ShowDeletedArticles}
             );
 
+            if ($ShowTimeUnits) {
+
+                my %TimeUnitField = (
+                    Value => $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} },
+                    Label => 'Time Unit'
+                );
+                $Article{TimeUnit} = $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} };
+
+                $ArticleFields{TimeUnit} = \%TimeUnitField;
+            }
+
             # Get transmission status information for email articles.
             my $TransmissionStatus;
             if ( $Article{ChannelName} && $Article{ChannelName} eq 'Email' ) {
@@ -2597,6 +2667,7 @@ sub _ArticleTree {
                     TransmissionStatus => $TransmissionStatus,
                     ZoomExpand         => $Self->{ZoomExpand},
                     ZoomExpandSort     => $Self->{ZoomExpandSort},
+                    ShowTimeUnits      => $ShowTimeUnits,
                 },
             );
 

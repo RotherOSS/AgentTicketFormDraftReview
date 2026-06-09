@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo - deb99d60daf212ae73ec7feb78074f3f7ae563f8 - Kernel/Output/HTML/Templates/Standard/AgentTicketZoom.tt
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -124,6 +126,7 @@
                                         title="[% Translate("Delete") | html %]"
                                         data-title="[% FormDraft.Title | html %]"
                                         [% FormDraft.LinkParam %]>
+
                                         <i class="fa fa-trash-o"></i>
                                     </a>
                                 </td>
@@ -434,6 +437,9 @@
                                         <i class="fa fa-paperclip"></i>
                                     </a>
                                 </th>
+[% RenderBlockStart("TimeUnitHeader") %]
+                                <th class="TimeUnit"><a href="#">[% Translate("Time Units") | html %]</a></th>
+[% RenderBlockEnd("TimeUnitHeader") %]
                             </tr>
                         </thead>
                         <tbody>
@@ -526,6 +532,11 @@
                                     <span class="NoContent"></span>
 [% RenderBlockEnd("TreeItemNoAttachment") %]
                                 </td>
+                                [% IF Data.ShowTimeUnits %]
+                                <td class="No">
+                                    [% Data.TimeUnit | html %]
+                                </td>
+                                [% END %]
                             </tr>
 [% RenderBlockEnd("TreeItem") %]
                         </tbody>

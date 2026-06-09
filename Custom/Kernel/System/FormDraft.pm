@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo - 27fb4d48e258dedf7dfc2e370296612f56f88ba9 - Kernel/System/FormDraft.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,6 +18,7 @@
 
 package Kernel::System::FormDraft;
 
+use v5.24;
 use strict;
 use warnings;
 
@@ -30,6 +33,7 @@ use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::System::Cache',
+    'Kernel::System::Encode',
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Storable',
@@ -346,7 +350,14 @@ sub FormDraftAdd {
     );
 
     my $Content = $StorableContent;
-    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+    my %ExtraDoParams;
+    if ( $DBObject->GetDatabaseFunction('DirectBlob') ) {
+
+        # Make sure that the content is passed as a byte array and is bound as binary
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput($StorableContent);
+        $ExtraDoParams{BindAsBinary} = [ 0, 0, 0, 0, 1, 0, 0, ];
+    }
+    else {
         $Content = encode_base64($StorableContent);
     }
 
@@ -360,6 +371,7 @@ sub FormDraftAdd {
             \$Param{ObjectType}, \$Param{ObjectID}, \$Param{Action}, \$Param{Title}, \$Content,
             \$Param{UserID},     \$Param{UserID},
         ],
+        %ExtraDoParams,
     );
 
     # delete affected caches
@@ -460,7 +472,14 @@ sub FormDraftUpdate {
     );
 
     my $Content = $StorableContent;
-    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+    my %ExtraDoParams;
+    if ( $DBObject->GetDatabaseFunction('DirectBlob') ) {
+
+        # Make sure that the content is passed as a byte array and is bound as binary
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput($StorableContent);
+        $ExtraDoParams{BindAsBinary} = [ 0, 1, 0, 0 ];
+    }
+    else {
         $Content = encode_base64($StorableContent);
     }
 
@@ -471,6 +490,7 @@ sub FormDraftUpdate {
             . ' SET title = ?, content = ?, change_time = current_timestamp, change_by = ?'
             . ' WHERE id = ?',
         Bind => [ \$Param{Title}, \$Content, \$Param{UserID}, \$Param{FormDraftID}, ],
+        %ExtraDoParams,
     );
 
     # delete affected caches

@@ -1473,9 +1473,9 @@ sub MaskAgentZoom {
     }
 
     elsif ( $UserPermission eq 'ro' ) {
-        $ActionLookup{AgentTicketFormDraftEdit}{Description}    = Translatable('View draft'),
-        $ActionLookup{AgentTicketFormDraftEdit}{Name}           = Translatable('View'),
-        $ActionLookup{AgentTicketFormDraftEdit}{TranslatedName} = $Kernel::OM->Get('Kernel::Language')->Translate('View'),
+        $ActionLookup{AgentTicketFormDraftEdit}{Description}    = Translatable('View draft');
+        $ActionLookup{AgentTicketFormDraftEdit}{Name}           = Translatable('View');
+        $ActionLookup{AgentTicketFormDraftEdit}{TranslatedName} = $Kernel::OM->Get('Kernel::Language')->Translate('View');
     }
 # EO AgentTicketFormDraftReview
 

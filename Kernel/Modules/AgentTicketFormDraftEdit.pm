@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -55,7 +55,6 @@ sub Run {
     # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # get Ticket and FormDraftID
@@ -69,9 +68,6 @@ sub Run {
             Comment => Translatable('Please contact the administrator.'),
         );
     }
-
-    # get config of frontend module
-    my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
 
     # check permissions
     # first check at frontend level and then at ticket level
@@ -169,7 +165,6 @@ sub Run {
         my $CustomersNumberTo = $FormDraft->{FormData}->{CustomerTicketCounterToCustomer} || 0;
 
         if ($CustomersNumberTo) {
-            my $CustomerCounter = 1;
 
             COUNT:
             for my $Count ( 1 .. $CustomersNumberTo ) {
@@ -191,7 +186,6 @@ sub Run {
         my $CustomersNumberCc = $FormDraft->{FormData}->{CustomerTicketCounterCcCustomer} || 0;
 
         if ($CustomersNumberCc) {
-            my $CustomerCounterCc = 1;
 
             COUNT:
             for my $Count ( 1 .. $CustomersNumberCc ) {
@@ -213,7 +207,6 @@ sub Run {
         my $CustomersNumberBcc = $FormDraft->{FormData}->{CustomerTicketCounterBccCustomer} || 0;
 
         if ($CustomersNumberBcc) {
-            my $CustomerCounterBcc = 1;
 
             COUNT:
             for my $Count ( 1 .. $CustomersNumberBcc ) {

@@ -36,82 +36,103 @@
         <div class="Content">
             [% INCLUDE "FormElements/DraftNotifications.tt" %]
             <div class="ContentColumn">
-                <fieldset class="TableLike FixedLabel">
+                <fieldset class="ModularForm FixedLabel">
 
-                    <label>[% Translate("From") | html %]:</label>
-                    <div class="Field">
-                        [% Data.From | html %]
-                    </div>
-                    <div class="Clear"></div>
-
-[% RenderBlockStart("ToCustomer") %]
-                    <label>[% Translate("To") | html %]:</label>
-                    <div class="Field">
-                        <div class="Field">
-                            [% Data.ToCustomer | html %]
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label>[% Translate("From") | html %]:</label>
+                            <div class="Field">
+                                [% Data.From | html %]
+                            </div>
                         </div>
                     </div>
-                    <div class="Clear"></div>
+
+[% RenderBlockStart("ToCustomer") %]
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label>[% Translate("To") | html %]:</label>
+                            <div class="Field">
+                                <div class="Field">
+                                    [% Data.ToCustomer | html %]
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 [% RenderBlockEnd("ToCustomer") %]
 
 [% RenderBlockStart("CcCustomer") %]
-                    <label>[% Translate("Cc") | html %]:</label>
-                    <div class="Field">
-                        <div class="Field">
-                            [% Data.Cc | html %]
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label>[% Translate("Cc") | html %]:</label>
+                            <div class="Field">
+                                <div class="Field">
+                                    [% Data.Cc | html %]
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="Clear"></div>
 [% RenderBlockEnd("CcCustomer") %]
 
 [% RenderBlockStart("BccCustomer") %]
-                    <label>[% Translate("Bcc") | html %]:</label>
-                    <div class="Field">
-                        <div class="Field">
-                            [% Data.Bcc | html %]
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label>[% Translate("Bcc") | html %]:</label>
+                            <div class="Field">
+                                <div class="Field">
+                                    [% Data.Bcc | html %]
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="Clear"></div>
 [% RenderBlockEnd("BccCustomer") %]
 
-                    <label for="Subject">[% Translate("Subject") | html %]:</label>
-                    <div class="Field">
-                        <input [% Data.ReadOnly %] type="text" name="Subject" id="Subject" value="[% Data.Subject | html %]" class="W75pc"/>
-                    </div>
-                    <div class="Clear"></div>
-
-                    <label for="RichText">[% Translate("Text") | html %]:</label>
-                    <div class="RichTextField">
-                        <textarea id="RichText" [% Data.ReadOnly %] name="Body" rows="15" cols="[% Config("Ticket::Frontend::TextAreaEmail") %]" class="[% Data.ReadOnlyClass %] RichText">[% Data.ResponseFormat %]</textarea>
-                    </div>
-                    <div class="Clear"></div>
-
-                    <label>[% Translate("Attachments") | html %]:</label>
-                    <div class="Field">
-[% IF Data.ReadOnly %]
-                        <div class="AttachmentListContainer">
-                            <table class="Hidden Small DataTable AttachmentList">
-                                <thead>
-                                    <th class="Filename">[% Translate("Filename") | html %]</th>
-                                    <th class="Filetype">[% Translate("Type") | html %]</th>
-                                    <th class="Filesize">[% Translate("Size") | html %]</th>
-                                </thead>
-                                <tbody>
-                                [% FOREACH Attachment IN Data.AttachmentList %]
-                                    <tr>
-                                        <td class="Filename ooo12g">[% Attachment.Filename | html %]</td>
-                                        <td class="Filetype ooo12g">[% Attachment.ContentType | html %]</td>
-                                        <td class="Filesize ooo12g" data-file-size="[% Attachment.Filesize | html %]">[% Attachment.Filesize | Localize('Filesize') | html %]</td>
-                                    </tr>
-                                [% END %]
-                                </tbody>
-                            </table>
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label for="Subject">[% Translate("Subject") | html %]:</label>
+                            <div class="Field">
+                                <input [% Data.ReadOnly %] type="text" name="Subject" id="Subject" value="[% Data.Subject | html %]" class="W75pc"/>
+                            </div>
                         </div>
-[% ELSE %]
-    [% INCLUDE "FormElements/AttachmentList.tt" %]
-[% END %]
                     </div>
-                    <div class="Clear"></div>
+
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label for="RichText">[% Translate("Text") | html %]:</label>
+                            <div class="RichTextField">
+                                <textarea id="RichText" [% Data.ReadOnly %] name="Body" rows="15" cols="[% Config("Ticket::Frontend::TextAreaEmail") %]" class="[% Data.ReadOnlyClass %] RichText">[% Data.ResponseFormat %]</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="Row">
+                        <div class="FieldCell">
+                            <label>[% Translate("Attachments") | html %]:</label>
+                            <div class="Field">
+[% IF Data.ReadOnly %]
+                                <div class="AttachmentListContainer">
+                                    <table class="Hidden Small DataTable AttachmentList">
+                                        <thead>
+                                            <th class="Filename">[% Translate("Filename") | html %]</th>
+                                            <th class="Filetype">[% Translate("Type") | html %]</th>
+                                            <th class="Filesize">[% Translate("Size") | html %]</th>
+                                        </thead>
+                                        <tbody>
+                                        [% FOREACH Attachment IN Data.AttachmentList %]
+                                            <tr>
+                                                <td class="Filename ooo12g">[% Attachment.Filename | html %]</td>
+                                                <td class="Filetype ooo12g">[% Attachment.ContentType | html %]</td>
+                                                <td class="Filesize ooo12g" data-file-size="[% Attachment.Filesize | html %]">[% Attachment.Filesize | Localize('Filesize') | html %]</td>
+                                            </tr>
+                                        [% END %]
+                                        </tbody>
+                                    </table>
+                                </div>
+[% ELSE %]
+                                [% INCLUDE "FormElements/AttachmentList.tt" %]
+[% END %]
+                            </div>
+                        </div>
+                    </div>
 
                 </fieldset>
             </div>

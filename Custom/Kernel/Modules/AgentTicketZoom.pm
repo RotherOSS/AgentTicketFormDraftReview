@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - ca50d9ee774bfd53701b6cca5d903ea4a2491f19 - Kernel/Modules/AgentTicketZoom.pm
+# $origin: otobo - 8e4d81ad58f25a4af15f43187597703c0e233acf - Kernel/Modules/AgentTicketZoom.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -401,10 +401,51 @@ sub Run {
 
         my $FormDraftID = $ParamObject->GetParam( Param => 'FormDraftID' ) || '';
         if ($FormDraftID) {
-            $Response{Success} = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
+
+            # fetch form draft to check permissions and ticket lock
+            my $FormDraftObject = $Kernel::OM->Get('Kernel::System::FormDraft');
+            my $FormDraft       = $FormDraftObject->FormDraftGet(
                 FormDraftID => $FormDraftID,
                 UserID      => $Self->{UserID},
             );
+
+            # use config of draft action for check
+            my $Config = $ConfigObject->Get( 'Ticket::Frontend::' . $FormDraft->{Action} );
+            if ( $AclActionLookup{ $FormDraft->{Action} } && IsHashRefWithData($Config) ) {
+
+                # permission check
+                if ( $Config->{Permission} ) {
+                    my $AccessOk = $TicketObject->TicketPermission(
+                        Type     => $Config->{Permission},
+                        TicketID => $Self->{TicketID},
+                        UserID   => $Self->{UserID},
+                        LogNo    => 1,
+                    );
+                    if ( !$AccessOk ) {
+                        $Response{Error} = $LayoutObject->{LanguageObject}->Translate("This ticket does not exist, or you don't have permissions to access it in its current state.");
+                    }
+                }
+
+                # ticket lock check
+                if ( $Config->{RequiredLock} ) {
+                    if ( $TicketObject->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
+                        my $AccessOk = $TicketObject->OwnerCheck(
+                            TicketID => $Self->{TicketID},
+                            OwnerID  => $Self->{UserID},
+                        );
+                        if ( !$AccessOk ) {
+                            $Response{Error} = $LayoutObject->{LanguageObject}->Translate("Sorry, you need to be the ticket owner to perform this action.");
+                        }
+                    }
+                }
+
+                if ( !$Response{Error} ) {
+                    $Response{Success} = $FormDraftObject->FormDraftDelete(
+                        FormDraftID => $FormDraftID,
+                        UserID      => $Self->{UserID},
+                    );
+                }
+            }
         }
         else {
             $Response{Error} = $LayoutObject->{LanguageObject}->Translate("Missing FormDraftID!");
@@ -1529,7 +1570,6 @@ sub MaskAgentZoom {
         {
             my $ActionData = $ActionLookup{$Action};
 
-            SHOWNFormDraftACTIONENTRY:
             for my $ShownFormDraftActionEntry (
                 sort {
                     $a->{Title}

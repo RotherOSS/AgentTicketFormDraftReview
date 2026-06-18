@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 8e4d81ad58f25a4af15f43187597703c0e233acf - Kernel/Modules/AgentTicketZoom.pm
+# $origin: otobo - bdc63c4b44058a17e88b3222b2d0eff5b590f0fc - Kernel/Modules/AgentTicketZoom.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1703,7 +1703,7 @@ sub MaskAgentZoom {
             $ProcessEntityIDField = 'DynamicField_'
                 . $ConfigObject->Get("Process::DynamicFieldProcessManagementProcessID");
 
-            # get the DF where the AtivityEntityID is stored
+            # get the DF where the ActivityEntityID is stored
             my $ActivityEntityIDField = 'DynamicField_'
                 . $ConfigObject->Get("Process::DynamicFieldProcessManagementActivityID");
 

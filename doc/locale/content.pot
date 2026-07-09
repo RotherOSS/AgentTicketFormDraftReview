@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OTOBO Documentation dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-09 12:24+0000\n"
+"POT-Creation-Date: 2026-07-09 08:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,7 +45,7 @@ msgid "Framework"
 msgstr ""
 
 #: ../content/index.rst:23
-msgid "OTOBO 11.0.x"
+msgid "OTOBO 11.1.x"
 msgstr ""
 
 #: ../content/index.rst:26

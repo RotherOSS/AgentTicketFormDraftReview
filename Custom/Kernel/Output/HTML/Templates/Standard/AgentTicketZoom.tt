@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - deb99d60daf212ae73ec7feb78074f3f7ae563f8 - Kernel/Output/HTML/Templates/Standard/AgentTicketZoom.tt
+# $origin: otobo - b31328ff471f0f632e369105d7aad51853f2d995 - Kernel/Output/HTML/Templates/Standard/AgentTicketZoom.tt
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -163,6 +163,7 @@
                             </a>
                         </div>
                         <ul class="Actions">
+[% RenderBlockStart("TicketMenuItem") %]
 [% RenderBlockStart("TicketMenu") %]
                             <li id="nav-[% Data.Name | replace(' ', '-') | html %]">
                             [% IF Data.Type == 'Cluster' %]
@@ -181,6 +182,21 @@
 [% RenderBlockEnd("TicketMenuSubContainer") %]
                             </li>
 [% RenderBlockEnd("TicketMenu") %]
+[% RenderBlockStart("TicketMenuFormGeneric") %]
+                            <li class="[% Data.Class | html %]">
+
+                                [% # using a form here is necessary to enable the backend to perform a challenge token check on an article action %]
+                                <form title="[% Translate(Data.Description) | html %]" action="[% Env("CGIHandle") | html %]" method="post">
+                                    <input type="hidden" name="Action" value="[% Data.Action | html %]"/>
+                                    <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
+[% IF Data.Subaction %]
+                                    <input type="hidden" name="Subaction" value="[% Data.Subaction | html %]" />
+[% END %]
+                                    <a href="#" class="TicketMenuFormAction [% Data.Class | html %]" title="[% Translate(Data.Description) | html %]">[% Translate(Data.Name) | html %]</a>
+                                </form>
+                            </li>
+[% RenderBlockEnd("TicketMenuFormGeneric") %]
+[% RenderBlockEnd("TicketMenuItem") %]
 [% RenderBlockStart("TicketMenuPhoneAsDropdown") %]
                             <li>
                                 <form title="[% Translate(Data.Name) | html %]" action="[% Env("CGIHandle") %]" method="get" id="[% Data.FormID | html %]">

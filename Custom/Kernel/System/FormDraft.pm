@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 27fb4d48e258dedf7dfc2e370296612f56f88ba9 - Kernel/System/FormDraft.pm
+# $origin: otobo - 893b2dced8f8a1ae0b26a0c44b5a37e685909260 - Kernel/System/FormDraft.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -49,11 +49,7 @@ All draft functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
@@ -76,31 +72,27 @@ sub new {
     return $Self;
 }
 
-=item FormDraftGet()
+=head2 FormDraftGet()
 
 get draft attributes
 
     my $FormDraft = $FormDraftObject->FormDraftGet(
-        FormDraftID    => 123,
-        GetContent => 1,                # optional, default 1
-# Rother OSS / AgentTicketFormDraftReview
-        ObjectID   => 123,              # though it is a security critical point, it remains optional for backward compatibility
-        ObjectType => 'Ticket',         # though it is a security critical point, it remains optional for backward compatibility
-# EO AgentTicketFormDraftReview
-        UserID     => 123,
+        FormDraftID => 123,
+        ObjectID    => 123,
+        GetContent  => 1,                # optional, default 1
     );
 
 Returns (with GetContent = 0):
 
     $FormDraft = {
-        FormDraftID    => 123,
-        ObjectType => 'Ticket',
-        ObjectID   => 12,
-        Action     => 'AgentTicketCompose',
-        CreateTime => '2016-04-07 15:41:15',
-        CreateBy   => 1,
-        ChangeTime => '2016-04-07 15:59:45',
-        ChangeBy   => 2,
+        FormDraftID => 123,
+        ObjectType  => 'Ticket',
+        ObjectID    => 12,
+        Action      => 'AgentTicketCompose',
+        CreateTime  => '2016-04-07 15:41:15',
+        CreateBy    => 1,
+        ChangeTime  => '2016-04-07 15:59:45',
+        ChangeBy    => 2,
     };
 
 Returns (without GetContent or GetContent = 1):
@@ -123,15 +115,15 @@ Returns (without GetContent or GetContent = 1):
             },
             ...
         ],
-        FormDraftID    => 123,
-        ObjectType => 'Ticket',
-        ObjectID   => 12,
-        Action     => 'AgentTicketCompose',
-        CreateTime => '2016-04-07 15:41:15',
-        CreateBy   => 1,
-        ChangeTime => '2016-04-07 15:59:45',
-        ChangeBy   => 2,
-        Title      => 'my draft',
+        FormDraftID => 123,
+        ObjectType  => 'Ticket',
+        ObjectID    => 12,
+        Action      => 'AgentTicketCompose',
+        CreateTime  => '2016-04-07 15:41:15',
+        CreateBy    => 1,
+        ChangeTime  => '2016-04-07 15:59:45',
+        ChangeBy    => 2,
+        Title       => 'my draft',
     };
 
 =cut
@@ -140,11 +132,18 @@ sub FormDraftGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(FormDraftID UserID)) {
+    for my $Needed (qw(FormDraftID ObjectID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!",
+            );
+            return;
+        }
+        if ( !IsInteger( $Param{$Needed} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$Needed needs to be an integer!",
             );
             return;
         }
@@ -161,8 +160,10 @@ sub FormDraftGet {
     }
 
     # check cache
-    my $CacheKey = 'FormDraftGet::GetContent' . $Param{GetContent} . '::ID' . $Param{FormDraftID};
-    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+    my $CacheKey = 'FormDraftGet::GetContent' . $Param{GetContent}
+        . '::ObjectID' . $Param{ObjectID}
+        . '::ID' . $Param{FormDraftID};
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
         Type => $Self->{CacheType},
         Key  => $CacheKey,
     );
@@ -181,12 +182,12 @@ sub FormDraftGet {
         $SQL .= ', content';
         push @EncodeColumns, 0;
     }
-    $SQL .= ' FROM form_draft WHERE id = ?';
+    $SQL .= ' FROM form_draft WHERE id = ? AND object_id = ?';
 
     # ask the database
     return if !$DBObject->Prepare(
         SQL    => $SQL,
-        Bind   => [ \$Param{FormDraftID} ],
+        Bind   => [ \$Param{FormDraftID}, \$Param{ObjectID} ],
         Limit  => 1,
         Encode => \@EncodeColumns,
     );
@@ -206,27 +207,6 @@ sub FormDraftGet {
             ChangeBy    => $Row[8],
         );
 
-# Rother OSS / AgentTicketFormDraftReview
-        # if no $Param{ObjectType} is provided, there is no validation
-        # this validation is important but is kept optional for backward compatibility
-        if ( $Param{ObjectType} && $FormDraft{ObjectType} ne $Param{ObjectType} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "The draft $Param{FormDraftID} is not of the type $Param{ObjectType}!",
-            );
-            return;
-        }
-
-        # if no $Param{ObjectID} is provided, there is no validation
-        # this validation is important but is kept optional for backward compatibility
-        if ( $Param{ObjectID} && $FormDraft{ObjectID} != $Param{ObjectID} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "The draft $Param{FormDraftID} does not belong to the $Param{ObjectType} $Param{ObjectID}!",
-            );
-            return;
-        }
-# EO AgentTicketFormDraftReview
         if ( $Param{GetContent} ) {
 
             my $RawContent      = $Row[9] // {};
@@ -257,7 +237,7 @@ sub FormDraftGet {
     my $CacheKeyNoContent;
     my %FormDraftNoContent;
     if ( $Param{GetContent} ) {
-        $CacheKeyNoContent  = 'FormDraftGet::GetContent0::ID' . $Param{FormDraftID};
+        $CacheKeyNoContent  = 'FormDraftGet::GetContent0::ObjectID' . $Param{ObjectID} . '::ID' . $Param{FormDraftID};
         %FormDraftNoContent = %{ dclone( \%FormDraft ) };
         delete $FormDraftNoContent{FileData};
         delete $FormDraftNoContent{FormData};
@@ -285,7 +265,7 @@ sub FormDraftGet {
     return \%FormDraft;
 }
 
-=item FormDraftAdd()
+=head2 FormDraftAdd()
 
 add a new draft
 
@@ -320,7 +300,7 @@ sub FormDraftAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(FormData ObjectType Action)) {
+    for my $Needed (qw(FormData ObjectID ObjectType Action UserID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -333,7 +313,7 @@ sub FormDraftAdd {
         if ( !IsInteger( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "$Needed needs to be an integer!",
             );
             return;
         }
@@ -380,7 +360,7 @@ sub FormDraftAdd {
     return 1;
 }
 
-=item FormDraftUpdate()
+=head2 FormDraftUpdate()
 
 update an existing draft
 
@@ -416,7 +396,7 @@ sub FormDraftUpdate {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(FormData ObjectType Action)) {
+    for my $Needed (qw(FormData ObjectID ObjectType Action UserID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -429,7 +409,7 @@ sub FormDraftUpdate {
         if ( !IsInteger( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "$Needed needs to be an integer!",
             );
             return;
         }
@@ -438,8 +418,8 @@ sub FormDraftUpdate {
     # check if specified draft already exists and do sanity checks
     my $FormDraft = $Self->FormDraftGet(
         FormDraftID => $Param{FormDraftID},
+        ObjectID    => $Param{ObjectID},
         GetContent  => 0,
-        UserID      => $Param{UserID},
     );
     if ( !$FormDraft ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -499,13 +479,13 @@ sub FormDraftUpdate {
     return 1;
 }
 
-=item FormDraftDelete()
+=head2 FormDraftDelete()
 
 remove draft
 
     my $Success = $FormDraftObject->FormDraftDelete(
         FormDraftID => 123,
-        UserID  => 123,
+        ObjectID    => 123,
     );
 
 =cut
@@ -514,11 +494,18 @@ sub FormDraftDelete {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(FormDraftID UserID)) {
+    for my $Needed (qw(FormDraftID ObjectID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!",
+            );
+            return;
+        }
+        if ( !IsInteger( $Param{$Needed} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$Needed needs to be an integer!",
             );
             return;
         }
@@ -528,8 +515,8 @@ sub FormDraftDelete {
     # use database query directly (we don't need raw content)
     my $FormDraft = $Self->FormDraftGet(
         FormDraftID => $Param{FormDraftID},
+        ObjectID    => $Param{ObjectID},
         GetContent  => 0,
-        UserID      => $Param{UserID},
     );
     if ( !$FormDraft ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -551,7 +538,7 @@ sub FormDraftDelete {
     return 1;
 }
 
-=item FormDraftListGet()
+=head2 FormDraftListGet()
 
 get list of drafts, optionally filtered by object type, object id and action
 
@@ -559,7 +546,6 @@ get list of drafts, optionally filtered by object type, object id and action
         ObjectType => 'Ticket',             # optional
         ObjectID   => 123,                  # optional
         Action     => 'AgentTicketCompose', # optional
-        UserID     => 123,
     );
 
 Returns:
@@ -583,15 +569,6 @@ Returns:
 
 sub FormDraftListGet {
     my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
 
     # check cache
     my $CacheKey = 'FormDraftListGet';
@@ -661,7 +638,9 @@ sub FormDraftListGet {
     return \@FormDrafts;
 }
 
-=item _DeleteAffectedCaches()
+=head1 PRIVATE INTERFACE
+
+=head2 _DeleteAffectedCaches()
 
 remove all potentially affected caches
 
@@ -695,8 +674,8 @@ sub _DeleteAffectedCaches {
     );
     if ( $Param{FormDraftID} ) {
         push @CacheKeys,
-            'FormDraftGet::GetContent0::ID' . $Param{FormDraftID},
-            'FormDraftGet::GetContent1::ID' . $Param{FormDraftID};
+            'FormDraftGet::GetContent0::ObjectID' . $Param{ObjectID} . '::ID' . $Param{FormDraftID},
+            'FormDraftGet::GetContent1::ObjectID' . $Param{ObjectID} . '::ID' . $Param{FormDraftID};
     }
 
     # delete affected caches
@@ -710,9 +689,5 @@ sub _DeleteAffectedCaches {
 
     return 1;
 }
-
-=back
-
-=cut
 
 1;

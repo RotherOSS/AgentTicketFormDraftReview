@@ -140,7 +140,6 @@ sub Run {
     my $FormDraft = $FormDraftObject->FormDraftGet(
         FormDraftID => $FormDraftID,
         ObjectID    => $TicketID,
-        UserID      => $Self->{UserID},
     );
 
     # Check for failed draft loading request.

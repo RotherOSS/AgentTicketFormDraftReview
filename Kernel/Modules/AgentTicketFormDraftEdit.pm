@@ -232,6 +232,14 @@ sub Run {
             );
         }
 
+        # replace form id in inline image links
+        $FormDraft->{FormData}{Body} =~ s{
+            (<img.+?src=("|')[^"'>]+?FormID=)([^;]+?)(;[^>]*>)
+        }
+        {
+            $1 . $Self->{FormID} . $4
+        }esgxi;
+
         my $Output = $LayoutObject->Header(
             Value     => $Ticket{TicketNumber},
             Type      => 'Small',

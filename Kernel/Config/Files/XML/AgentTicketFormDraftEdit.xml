@@ -14,8 +14,8 @@
                         <Array>
                         </Array>
                     </Item>
-                    <Item Key="Description" Translatable="1">Ticket Compose email Answer.</Item>
-                    <Item Key="Title" Translatable="1">Draft Edit</Item>
+                    <Item Key="Description" Translatable="1">Edit or view form drafts for tickets.</Item>
+                    <Item Key="Title" Translatable="1">Form Draft Edit</Item>
                     <Item Key="NavBarName">Ticket</Item>
                 </Hash>
             </Item>

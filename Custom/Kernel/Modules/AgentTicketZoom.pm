@@ -1512,21 +1512,25 @@ sub MaskAgentZoom {
 
 # Rother OSS / AgentTicketFormDraftReview
     # get user authorization level (owner, rw, ro)
-    my $UserPermission = $Self->_GetUserPermissionLevel();
-    my $TicketIsLocked = $TicketObject->TicketLockGet(
+    my $ReviewPermission = $Self->_GetReviewPermissionLevel();
+    my $TicketIsLocked   = $TicketObject->TicketLockGet(
         TicketID => $Self->{TicketID}
     );
 
-    # on locked tickets only the owner can fully access compose and forward form drafts
-    if ( $TicketIsLocked && $UserPermission ne 'owner' ) {
-        delete $ActionLookup{AgentTicketCompose};
-        delete $ActionLookup{AgentTicketForward};
-    }
+    if ( $ReviewPermission ne 'owner' ) {
 
-    elsif ( $UserPermission eq 'ro' ) {
-        $ActionLookup{AgentTicketFormDraftEdit}{Description}    = Translatable('View draft');
-        $ActionLookup{AgentTicketFormDraftEdit}{Name}           = Translatable('View');
-        $ActionLookup{AgentTicketFormDraftEdit}{TranslatedName} = $Kernel::OM->Get('Kernel::Language')->Translate('View');
+        # on locked tickets only the owner can fully access compose and forward form drafts
+        if ( $TicketIsLocked ) {
+            delete $ActionLookup{AgentTicketCompose};
+            delete $ActionLookup{AgentTicketForward};
+        }
+
+        # change review description for ro only access
+        if ( $ReviewPermission eq 'ro' && $ActionLookup{AgentTicketFormDraftEdit} ) {
+            $ActionLookup{AgentTicketFormDraftEdit}{Description}    = Translatable('View draft');
+            $ActionLookup{AgentTicketFormDraftEdit}{Name}           = Translatable('View');
+            $ActionLookup{AgentTicketFormDraftEdit}{TranslatedName} = $Kernel::OM->Get('Kernel::Language')->Translate('View');
+        }
     }
 # EO AgentTicketFormDraftReview
 
@@ -1606,7 +1610,8 @@ sub MaskAgentZoom {
                 };
 
 # Rother OSS / AgentTicketFormDraftReview
-                $ShownFormDraftActionEntry->{ReadWritePermission} = $UserPermission ne "ro";
+                $ShownFormDraftActionEntry->{ReadWritePermission} =
+                    $Action ne 'AgentTicketFormDraftReview' || $ReviewPermission ne 'ro';
 # EO AgentTicketFormDraftReview
                 push @FormDrafts, $ShownFormDraftActionEntry;
             }
@@ -3555,7 +3560,7 @@ sub _GetIncludedFieldOrdered {
 }
 
 # Rother OSS / AgentTicketFormDraftReview
-sub _GetUserPermissionLevel() {
+sub _GetReviewPermissionLevel() {
     my ( $Self, %Param ) = @_;
 
     #check if user is the owner
@@ -3577,7 +3582,7 @@ sub _GetUserPermissionLevel() {
     my $ModuleReg = $ConfigObject->Get('Frontend::Module')->{AgentTicketFormDraftEdit};
 
     # no permission if module is not registered
-    return if !$ModuleReg;
+    return '' if !$ModuleReg;
 
     # module permission check for action
     my %AccessFlag;

@@ -54,5 +54,5 @@
         <Value>
             <Item ValueType="String" ValueRegex="^\d+(\.\d+)?$">320</Item>
         </Value>
-    </Setting>    
+    </Setting>
 </otobo_config>

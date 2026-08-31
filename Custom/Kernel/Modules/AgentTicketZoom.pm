@@ -1451,7 +1451,7 @@ sub MaskAgentZoom {
         }
     }
 
-    # Check if AgentTicketCompose/AgentTicketFormDraftEdit and AgentTicketForward are allowed as action (for display of FormDrafts).
+    # Check if AgentTicketCompose and AgentTicketForward are allowed as action (for display of FormDrafts).
     my %ActionConfig = (
         AgentTicketCompose => {
             Link           => 'Action=AgentTicketCompose;TicketID=[% Data.TicketID | uri %]',

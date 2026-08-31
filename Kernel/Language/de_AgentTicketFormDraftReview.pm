@@ -30,6 +30,13 @@ sub Data {
     $Self->{Translation}->{'Edit draft'} = 'Entwurf bearbeiten';
     $Self->{Translation}->{'View draft'} = 'Entwurf ansehen';
 
+    # SysConfig
+    $Self->{Translation}->{'Edit or view form drafts for tickets.'} = '';
+    $Self->{Translation}->{'Form Draft Edit'} = '';
+    $Self->{Translation}->{'Required permissions to use the draft edit screen in the agent interface.'} =
+        '';
+
+
     push @{ $Self->{JavaScriptStrings} // [] }, (
     );
 

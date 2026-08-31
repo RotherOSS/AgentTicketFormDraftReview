@@ -12,6 +12,7 @@
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentTicketZoom.tt" />
         <File Permission="660" Location="Custom/Kernel/System/FormDraft.pm" />
         <File Permission="660" Location="Kernel/Config/Files/XML/AgentTicketFormDraftEdit.xml" />
+        <File Permission="660" Location="Kernel/Language/de_AgentTicketFormDraftReview.pm" />
         <File Permission="660" Location="Kernel/Modules/AgentTicketFormDraftEdit.pm" />
         <File Permission="660" Location="Kernel/Output/HTML/Templates/Standard/AgentTicketFormDraftEdit.tt" />
     </Filelist>

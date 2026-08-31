@@ -86,7 +86,7 @@ sub Run {
     else {
         # error screen, there is no frontend permission to this module
         return $LayoutObject->NoPermission(
-            Message    => $LayoutObject->{LanguageObject}->Translate('You have no permissions!'),
+            Message    => Translatable("This ticket does not exist, or you don't have permissions to access it in its current state."),
             WithHeader => 'yes',
         );
     }
@@ -110,7 +110,7 @@ sub Run {
     # error screen, don't show ticket
     if ( !$Self->{AccessMode} ) {
         return $LayoutObject->NoPermission(
-            Message    => $LayoutObject->{LanguageObject}->Translate('You have no permissions!'),
+            Message    => Translatable("This ticket does not exist, or you don't have permissions to access it in its current state."),
             WithHeader => 'yes',
         );
     }

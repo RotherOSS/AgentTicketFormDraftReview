@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 20868c567cf1e4e090b4d2d7715b1ea353a9f3af - Kernel/Modules/AgentTicketZoom.pm
+# $origin: otobo - 430e2c7d0e96122aa06a0171b5e0d3044fe0a706 - Kernel/Modules/AgentTicketZoom.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1973,13 +1973,16 @@ sub MaskAgentZoom {
                                         # no ValueMaxChars here, enough space available
                                     );
 
+                                    # use translation here to be able to reduce the character length in the template
+                                    my $Label = $LayoutObject->{LanguageObject}->Translate( $IncludeDFConfig->{Label} );
+
                                     my %IncludeField = (
                                         $IncludeDFConfig->{Name} => $ValueStrg->{Title},
                                         Name                     => $IncludeDFConfig->{Name},
                                         Title                    => $ValueStrg->{Title},
                                         Value                    => $ValueStrg->{Value},
                                         ValueKey                 => $ValueItem->{ $IncludeDFConfig->{Name} },
-                                        Label                    => $IncludeDFConfig->{Label},
+                                        Label                    => $Label,
                                         Link                     => $ValueStrg->{Link},
                                         LinkPreview              => $ValueStrg->{LinkPreview},
 
@@ -2162,13 +2165,16 @@ sub MaskAgentZoom {
                             # no ValueMaxChars here, enough space available
                         );
 
+                        # use translation here to be able to reduce the character length in the template
+                        my $Label = $LayoutObject->{LanguageObject}->Translate( $IncludeDFConfig->{Label} );
+
                         my %IncludeField = (
                             $IncludeDFConfig->{Name} => $ValueStrg->{Title},
                             Name                     => $IncludeDFConfig->{Name},
                             Title                    => $ValueStrg->{Title},
                             Value                    => $ValueStrg->{Value},
                             ValueKey                 => $ValueItem->{ $IncludeDFConfig->{Name} },
-                            Label                    => $IncludeDFConfig->{Label},
+                            Label                    => $Label,
                             Link                     => $ValueStrg->{Link},
                             LinkPreview              => $ValueStrg->{LinkPreview},
 

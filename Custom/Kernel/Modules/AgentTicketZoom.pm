@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 6610361de974b094f9570e7bf83df98b660d4dcb - Kernel/Modules/AgentTicketZoom.pm
+# $origin: otobo - c6712e56b7375c440d2b69085f0e8ca7c10bb7c3 - Kernel/Modules/AgentTicketZoom.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -2024,13 +2024,16 @@ sub MaskAgentZoom {
                                 # no ValueMaxChars here, enough space available
                             );
 
+                            # use translation here to be able to reduce the character length in the template
+                            my $Label = $LayoutObject->{LanguageObject}->Translate( $IncludeDFConfig->{Label} );
+
                             my %IncludeField = (
                                 $IncludeDFConfig->{Name} => $ValueStrg->{Title},
                                 Name                     => $IncludeDFConfig->{Name},
                                 Title                    => $ValueStrg->{Title},
                                 Value                    => $ValueStrg->{Value},
                                 ValueKey                 => $ValueItem->{ $IncludeDFConfig->{Name} },
-                                Label                    => $IncludeDFConfig->{Label},
+                                Label                    => $Label,
                                 Link                     => $ValueStrg->{Link},
                                 LinkPreview              => $ValueStrg->{LinkPreview},
 

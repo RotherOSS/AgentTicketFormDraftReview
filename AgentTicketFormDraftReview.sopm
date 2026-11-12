@@ -7,6 +7,7 @@
     <URL>https://otobo.io/</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
     <Description Lang="en">Enables users to view ticket drafts if they have read permissions, and to edit ticket drafts if they have write permissions.</Description>
+    <Description Lang="hu">Lehetővé teszi a felhasználóknak a jegy piszkozatainak megtekintését, ha olvasási jogosultsággal rendelkeznek, valamint a jegy piszkozatainak szerkesztését, ha írási jogosultsággal rendelkeznek.</Description>
     <Filelist>
         <File Permission="660" Location="Custom/Kernel/Modules/AgentTicketZoom.pm" />
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentTicketZoom.tt" />
